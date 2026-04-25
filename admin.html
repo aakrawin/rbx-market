@@ -214,8 +214,16 @@ body{background:#0a0a16;color:#fff;min-height:100vh}
               <input class="fi" id="st-site-name" placeholder="RBX Market">
             </div>
             <div class="fg fg-full">
-              <div class="fl">ไอคอนร้าน (emoji)</div>
-              <input class="fi" id="st-site-icon" placeholder="🎮" style="font-size:20px">
+              <div class="fl">โลโก้ร้าน (อัปโหลดรูป — แนะนำสี่เหลี่ยม 64x64px)</div>
+              <div style="display:flex;align-items:center;gap:10px">
+                <div id="logo-preview" style="width:40px;height:40px;border-radius:8px;background:linear-gradient(135deg,#00d4ff,#7b5ef8);display:flex;align-items:center;justify-content:center;font-size:18px;overflow:hidden;flex-shrink:0">🎮</div>
+                <div style="flex:1">
+                  <input type="file" id="st-logo-file" accept="image/*" onchange="previewLogo(this)" style="display:none">
+                  <button class="btn-sm btn-edit" onclick="document.getElementById('st-logo-file').click()" style="margin-bottom:4px;display:block;width:100%;text-align:center">📁 เลือกรูปโลโก้</button>
+                  <div style="font-size:10px;color:rgba(255,255,255,.3)">PNG · JPG · SVG · ขนาดแนะนำ 64×64px</div>
+                </div>
+              </div>
+              <input type="hidden" id="st-site-icon" value="🎮">
             </div>
             <div class="fg fg-full">
               <div class="fl">Hero — Badge ด้านบน (เช่น "48 assets พร้อมขาย")</div>
@@ -233,25 +241,49 @@ body{background:#0a0a16;color:#fff;min-height:100vh}
               <div class="fl">Hero — คำอธิบายใต้หัวข้อ</div>
               <input class="fi" id="st-hero-sub" placeholder="Script · 3D Model · Animation · VFX · UI · Icon ครบจบที่เดียว">
             </div>
-            <div class="fg">
-              <div class="fl">Hero — ตัวเลข stat 1 (เช่น 48+)</div>
-              <input class="fi" id="st-stat1-n" placeholder="48+">
-              <input class="fi" id="st-stat1-l" placeholder="Assets" style="margin-top:5px">
+
+            <!-- HERO BG IMAGE -->
+            <div class="fg fg-full">
+              <div class="fl">Hero — พื้นหลัง (อัปโหลดรูป — แนะนำ 1920×600px หรือ 16:9)</div>
+              <div style="border:1.5px dashed rgba(255,255,255,.15);border-radius:8px;overflow:hidden;margin-bottom:6px">
+                <div id="hero-bg-preview" style="height:120px;background:#080812 center/cover no-repeat;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.3);font-size:12px;position:relative">
+                  ยังไม่ได้เลือกรูป — จะใช้พื้นหลังสีเข้มแบบเดิม
+                  <div style="position:absolute;inset:0;background:rgba(0,0,0,.4)"></div>
+                </div>
+              </div>
+              <div style="display:flex;gap:8px;align-items:center">
+                <input type="file" id="st-hero-bg-file" accept="image/*" onchange="previewHeroBg(this)" style="display:none">
+                <button class="btn-sm btn-edit" onclick="document.getElementById('st-hero-bg-file').click()">📁 เลือกรูปพื้นหลัง Hero</button>
+                <button class="btn-sm btn-reject" onclick="clearHeroBg()">✕ เอาออก (ใช้สีเดิม)</button>
+              </div>
+              <div style="font-size:10px;color:rgba(255,255,255,.3);margin-top:4px">PNG · JPG · ขนาดแนะนำ 1920×600px · ไม่เกิน 2MB</div>
+              <input type="hidden" id="st-hero-bg-data" value="">
             </div>
             <div class="fg">
-              <div class="fl">Hero — ตัวเลข stat 2</div>
-              <input class="fi" id="st-stat2-n" placeholder="1.2K+">
-              <input class="fi" id="st-stat2-l" placeholder="ดาวน์โหลด" style="margin-top:5px">
+              <div class="fl">Hero — stat 1 label (จำนวน Assets — ดึงอัตโนมัติ)</div>
+              <input class="fi" id="st-stat1-l" placeholder="Assets" readonly style="opacity:.5">
             </div>
             <div class="fg">
-              <div class="fl">Hero — ตัวเลข stat 3</div>
+              <div class="fl">Hero — stat 2 label (ยอดดาวน์โหลด — ดึงอัตโนมัติ)</div>
+              <input class="fi" id="st-stat2-l" placeholder="ดาวน์โหลด" readonly style="opacity:.5">
+            </div>
+            <div class="fg">
+              <div class="fl">Hero — ตัวเลข stat 3 (คะแนน — ตั้งเอง)</div>
               <input class="fi" id="st-stat3-n" placeholder="4.8">
               <input class="fi" id="st-stat3-l" placeholder="คะแนนเฉลี่ย" style="margin-top:5px">
             </div>
             <div class="fg">
-              <div class="fl">Hero — ตัวเลข stat 4</div>
+              <div class="fl">Hero — ตัวเลข stat 4 (ลูกค้า — ตั้งเอง)</div>
               <input class="fi" id="st-stat4-n" placeholder="250+">
               <input class="fi" id="st-stat4-l" placeholder="ลูกค้า" style="margin-top:5px">
+            </div>
+          </div>
+          <!-- live stat จาก Supabase -->
+          <div style="background:rgba(255,255,255,.03);border:0.5px solid var(--border);border-radius:8px;padding:10px 14px;margin-bottom:10px;font-size:12px">
+            <div style="color:rgba(255,255,255,.4);margin-bottom:6px">ข้อมูลปัจจุบันจาก Supabase</div>
+            <div style="display:flex;gap:1.5rem">
+              <div><span style="color:#fff;font-weight:500" id="st-live-stat1">โหลด...</span></div>
+              <div><span style="color:#fff;font-weight:500" id="st-live-stat2">โหลด...</span></div>
             </div>
           </div>
 
@@ -442,7 +474,58 @@ async function deleteProduct(id){
   loadProducts();
 }
 
-function saveHeroSettings(){
+function previewLogo(input){
+  const file = input.files[0];
+  if(!file) return;
+  if(file.size > 500*1024){showToast('รูปโลโก้ควรไม่เกิน 500KB','err');return;}
+  const reader = new FileReader();
+  reader.onload = e => {
+    const data = e.target.result;
+    const prev = document.getElementById('logo-preview');
+    if(prev) prev.innerHTML = `<img src="${data}" style="width:100%;height:100%;object-fit:cover;border-radius:8px">`;
+    document.getElementById('st-site-icon').value = data;
+    showToast('โลโก้พร้อมแล้ว ✅ กดบันทึกด้านล่างครับ');
+  };
+  reader.readAsDataURL(file);
+}
+
+function previewHeroBg(input){
+  const file = input.files[0];
+  if(!file) return;
+  if(file.size > 2*1024*1024){showToast('รูปพื้นหลังควรไม่เกิน 2MB','err');return;}
+  const reader = new FileReader();
+  reader.onload = e => {
+    const data = e.target.result;
+    const prev = document.getElementById('hero-bg-preview');
+    if(prev){
+      prev.style.cssText += `;background-image:url('${data}');background-size:cover;background-position:center`;
+      prev.innerHTML = '<div style="position:absolute;inset:0;background:rgba(0,0,0,.4)"></div><span style="position:relative;color:#fff;font-size:11px">Preview พื้นหลัง Hero ✅</span>';
+    }
+    document.getElementById('st-hero-bg-data').value = data;
+    showToast('รูปพื้นหลังพร้อมแล้ว ✅ กดบันทึกด้านล่างครับ');
+  };
+  reader.readAsDataURL(file);
+}
+
+function clearHeroBg(){
+  document.getElementById('st-hero-bg-data').value='';
+  const prev=document.getElementById('hero-bg-preview');
+  if(prev){prev.style.backgroundImage='';prev.innerHTML='ยังไม่ได้เลือกรูป — จะใช้พื้นหลังสีเข้มแบบเดิม';}
+  showToast('เอารูปพื้นหลังออกแล้ว');
+}
+
+async function saveHeroSettings(){
+  // ดึง stat จริงจาก Supabase
+  let stat1n = '0', stat2n = '0';
+  try {
+    const {data:products} = await sb.from('products').select('sold,is_active').eq('is_active',true);
+    if(products){
+      stat1n = products.length + '+';
+      const totalSold = products.reduce((s,p)=>s+(p.sold||0),0);
+      stat2n = totalSold >= 1000 ? (totalSold/1000).toFixed(1)+'K+' : totalSold+'+';
+    }
+  } catch(e){}
+
   const cfg={
     siteName: document.getElementById('st-site-name').value||'RBX Market',
     siteIcon: document.getElementById('st-site-icon').value||'🎮',
@@ -450,17 +533,22 @@ function saveHeroSettings(){
     heroTitle1: document.getElementById('st-hero-title1').value||'Roblox Assets',
     heroTitle2: document.getElementById('st-hero-title2').value||'คุณภาพจริง ราคาย่อมเยา',
     heroSub: document.getElementById('st-hero-sub').value||'Script · 3D Model · Animation · VFX · UI · Icon ครบจบที่เดียว',
-    stat1n: document.getElementById('st-stat1-n').value||'48+',
-    stat1l: document.getElementById('st-stat1-l').value||'Assets',
-    stat2n: document.getElementById('st-stat2-n').value||'1.2K+',
-    stat2l: document.getElementById('st-stat2-l').value||'ดาวน์โหลด',
+    stat1n, stat1l: 'Assets',
+    stat2n, stat2l: 'ดาวน์โหลด',
     stat3n: document.getElementById('st-stat3-n').value||'4.8',
     stat3l: document.getElementById('st-stat3-l').value||'คะแนนเฉลี่ย',
     stat4n: document.getElementById('st-stat4-n').value||'250+',
     stat4l: document.getElementById('st-stat4-l').value||'ลูกค้า',
+    logoData: document.getElementById('st-site-icon').value||'🎮',
+    heroBgData: document.getElementById('st-hero-bg-data').value||'',
   };
   localStorage.setItem('rbx_hero_cfg', JSON.stringify(cfg));
-  showToast('บันทึก Hero settings แล้ว ✅');
+
+  // อัปเดต preview stat
+  document.getElementById('st-live-stat1').textContent = stat1n + ' ' + 'Assets';
+  document.getElementById('st-live-stat2').textContent = stat2n + ' ' + 'ดาวน์โหลด';
+
+  showToast('บันทึก Hero settings แล้ว ✅ (Assets: '+stat1n+', DL: '+stat2n+')');
   updatePreview();
 }
 
@@ -486,14 +574,41 @@ function updatePreview(){
   if(document.getElementById('prev-sub'))document.getElementById('prev-sub').textContent=sub;
 }
 
-function loadHeroSettings(){
+async function loadHeroSettings(){
+  // โหลด stat จาก Supabase
+  try {
+    const {data:products} = await sb.from('products').select('sold,is_active').eq('is_active',true);
+    if(products){
+      const cnt = products.length;
+      const totalSold = products.reduce((s,p)=>s+(p.sold||0),0);
+      const s2 = totalSold >= 1000 ? (totalSold/1000).toFixed(1)+'K+' : totalSold+'+';
+      if(document.getElementById('st-live-stat1'))
+        document.getElementById('st-live-stat1').textContent = cnt+'+ Assets';
+      if(document.getElementById('st-live-stat2'))
+        document.getElementById('st-live-stat2').textContent = s2+' ดาวน์โหลดรวม';
+    }
+  } catch(e){}
+
   const cfg = JSON.parse(localStorage.getItem('rbx_hero_cfg')||'{}');
+  // โหลดโลโก้
+  if(cfg.logoData && cfg.logoData.startsWith('data:')){
+    const prev = document.getElementById('logo-preview');
+    if(prev) prev.innerHTML = `<img src="${cfg.logoData}" style="width:100%;height:100%;object-fit:cover;border-radius:8px">`;
+    document.getElementById('st-site-icon').value = cfg.logoData;
+  }
+  // โหลด hero bg
+  if(cfg.heroBgData){
+    const prev = document.getElementById('hero-bg-preview');
+    if(prev){
+      prev.style.cssText += `;background-image:url('${cfg.heroBgData}');background-size:cover;background-position:center`;
+      prev.innerHTML = '<div style="position:absolute;inset:0;background:rgba(0,0,0,.4)"></div><span style="position:relative;color:#fff;font-size:11px">Preview พื้นหลัง Hero ✅</span>';
+    }
+    document.getElementById('st-hero-bg-data').value = cfg.heroBgData;
+  }
   const fields={
     'st-site-name':'siteName','st-site-icon':'siteIcon',
     'st-hero-badge':'heroBadge','st-hero-title1':'heroTitle1',
     'st-hero-title2':'heroTitle2','st-hero-sub':'heroSub',
-    'st-stat1-n':'stat1n','st-stat1-l':'stat1l',
-    'st-stat2-n':'stat2n','st-stat2-l':'stat2l',
     'st-stat3-n':'stat3n','st-stat3-l':'stat3l',
     'st-stat4-n':'stat4n','st-stat4-l':'stat4l',
   };
@@ -502,7 +617,6 @@ function loadHeroSettings(){
     if(el&&cfg[key])el.value=cfg[key];
   });
   updatePreview();
-  // live preview
   ['st-hero-badge','st-hero-title1','st-hero-title2','st-hero-sub'].forEach(id=>{
     const el=document.getElementById(id);
     if(el)el.addEventListener('input',updatePreview);
