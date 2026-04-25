@@ -268,14 +268,8 @@ body{background:#0a0a16;color:#fff;min-height:100vh}
               <input class="fi" id="st-stat2-l" placeholder="ดาวน์โหลด" readonly style="opacity:.5">
             </div>
             <div class="fg">
-              <div class="fl">Hero — ตัวเลข stat 3 (คะแนน — ตั้งเอง)</div>
-              <input class="fi" id="st-stat3-n" placeholder="4.8">
-              <input class="fi" id="st-stat3-l" placeholder="คะแนนเฉลี่ย" style="margin-top:5px">
-            </div>
-            <div class="fg">
-              <div class="fl">Hero — ตัวเลข stat 4 (ลูกค้า — ตั้งเอง)</div>
-              <input class="fi" id="st-stat4-n" placeholder="250+">
-              <input class="fi" id="st-stat4-l" placeholder="ลูกค้า" style="margin-top:5px">
+              <div class="fl">Hero — stat 4 label (ลูกค้า — ดึงอัตโนมัติจากออเดอร์)</div>
+              <input class="fi" id="st-stat4-l" value="ลูกค้า" readonly style="opacity:.5">
             </div>
           </div>
           <!-- live stat จาก Supabase -->
@@ -284,6 +278,7 @@ body{background:#0a0a16;color:#fff;min-height:100vh}
             <div style="display:flex;gap:1.5rem">
               <div><span style="color:#fff;font-weight:500" id="st-live-stat1">โหลด...</span></div>
               <div><span style="color:#fff;font-weight:500" id="st-live-stat2">โหลด...</span></div>
+              <div><span style="color:#fff;font-weight:500" id="st-live-stat4">โหลด...</span></div>
             </div>
           </div>
 
@@ -303,7 +298,7 @@ body{background:#0a0a16;color:#fff;min-height:100vh}
           </div>
 
           <div style="display:flex;justify-content:space-between;align-items:center;margin-top:.75rem">
-            <div style="font-size:11px;color:rgba(255,255,255,.35)">บันทึกแล้วไปแก้ index.html ใน GitHub ด้วยนะครับ</div>
+            <div style="font-size:11px;color:rgba(0,212,255,.7)">✅ บันทึกลง Supabase — หน้าร้านจะเปลี่ยนตามอัตโนมัติเลยครับ</div>
             <button class="btn-save" onclick="saveHeroSettings()">บันทึก Hero & Banner</button>
           </div>
         </div>
@@ -524,6 +519,12 @@ async function saveHeroSettings(){
       const totalSold = products.reduce((s,p)=>s+(p.sold||0),0);
       stat2n = totalSold >= 1000 ? (totalSold/1000).toFixed(1)+'K+' : totalSold+'+';
     }
+    // ดึงลูกค้าจาก orders
+    const {data:orders} = await sb.from('orders').select('user_email').eq('status','approved');
+    if(orders){
+      const uniqueCustomers = new Set(orders.map(o=>o.user_email)).size;
+      stat4n = uniqueCustomers + '+';
+    }
   } catch(e){}
 
   const cfg={
@@ -535,8 +536,6 @@ async function saveHeroSettings(){
     heroSub: document.getElementById('st-hero-sub').value||'Script · 3D Model · Animation · VFX · UI · Icon ครบจบที่เดียว',
     stat1n, stat1l: 'Assets',
     stat2n, stat2l: 'ดาวน์โหลด',
-    stat3n: document.getElementById('st-stat3-n').value||'4.8',
-    stat3l: document.getElementById('st-stat3-l').value||'คะแนนเฉลี่ย',
     stat4n: document.getElementById('st-stat4-n').value||'250+',
     stat4l: document.getElementById('st-stat4-l').value||'ลูกค้า',
     logoData: document.getElementById('st-site-icon').value||'🎮',
@@ -544,9 +543,22 @@ async function saveHeroSettings(){
   };
   localStorage.setItem('rbx_hero_cfg', JSON.stringify(cfg));
 
+  // บันทึกลง Supabase ให้หน้าร้านเปลี่ยนตามอัตโนมัติ
+  try {
+    for(const [k,v] of Object.entries(cfg)){
+      if(k==='logoData'||k==='heroBgData') continue; // ไม่บันทึกรูปใน Supabase เพราะใหญ่เกิน
+      await sb.from('site_settings').upsert({key:k, value:String(v), updated_at:new Date().toISOString()});
+    }
+    // บันทึก logoData และ heroBgData แยก (ถ้ามี)
+    if(cfg.logoData) await sb.from('site_settings').upsert({key:'logoData', value:cfg.logoData, updated_at:new Date().toISOString()});
+    if(cfg.heroBgData) await sb.from('site_settings').upsert({key:'heroBgData', value:cfg.heroBgData, updated_at:new Date().toISOString()});
+  } catch(e){ console.log('Supabase save err',e); }
+
   // อัปเดต preview stat
-  document.getElementById('st-live-stat1').textContent = stat1n + ' ' + 'Assets';
-  document.getElementById('st-live-stat2').textContent = stat2n + ' ' + 'ดาวน์โหลด';
+  document.getElementById('st-live-stat1').textContent = stat1n + ' Assets';
+  document.getElementById('st-live-stat2').textContent = stat2n + ' ดาวน์โหลด';
+  if(document.getElementById('st-live-stat4'))
+    document.getElementById('st-live-stat4').textContent = stat4n + ' ลูกค้า';
 
   showToast('บันทึก Hero settings แล้ว ✅ (Assets: '+stat1n+', DL: '+stat2n+')');
   updatePreview();
@@ -586,6 +598,12 @@ async function loadHeroSettings(){
         document.getElementById('st-live-stat1').textContent = cnt+'+ Assets';
       if(document.getElementById('st-live-stat2'))
         document.getElementById('st-live-stat2').textContent = s2+' ดาวน์โหลดรวม';
+      // ดึงลูกค้าจาก orders
+      const {data:ords} = await sb.from('orders').select('user_email').eq('status','approved');
+      if(ords && document.getElementById('st-live-stat4')){
+        const uc = new Set(ords.map(o=>o.user_email)).size;
+        document.getElementById('st-live-stat4').textContent = uc+'+ ลูกค้า';
+      }
     }
   } catch(e){}
 
@@ -609,7 +627,6 @@ async function loadHeroSettings(){
     'st-site-name':'siteName','st-site-icon':'siteIcon',
     'st-hero-badge':'heroBadge','st-hero-title1':'heroTitle1',
     'st-hero-title2':'heroTitle2','st-hero-sub':'heroSub',
-    'st-stat3-n':'stat3n','st-stat3-l':'stat3l',
     'st-stat4-n':'stat4n','st-stat4-l':'stat4l',
   };
   Object.entries(fields).forEach(([id,key])=>{

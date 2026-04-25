@@ -659,6 +659,67 @@ async function submitOrder(slipUrl) {
   });
 }
 
+// ---- LOAD SITE SETTINGS จาก Supabase ----
+async function loadSiteSettings() {
+  if(!sb) return;
+  try {
+    const {data} = await sb.from('site_settings').select('key,value');
+    if(!data || data.length===0) return;
+    const cfg = {};
+    data.forEach(row => cfg[row.key] = row.value);
+
+    // ชื่อร้าน
+    if(cfg.siteName){
+      document.getElementById('site-name').textContent = cfg.siteName;
+      document.title = cfg.siteName;
+    }
+    // โลโก้
+    if(cfg.logoData && cfg.logoData.startsWith('data:')){
+      const ico = document.getElementById('site-icon');
+      if(ico){ ico.innerHTML=''; ico.style.cssText+=';padding:0;overflow:hidden'; ico.innerHTML=`<img src="${cfg.logoData}" style="width:100%;height:100%;object-fit:cover;border-radius:7px">`; }
+    }
+    // Hero badge
+    if(cfg.heroBadge){
+      const el = document.querySelector('.hero-badge');
+      if(el) el.innerHTML = `<span style="font-size:8px">●</span> ${cfg.heroBadge}`;
+    }
+    // Hero title
+    if(cfg.heroTitle1||cfg.heroTitle2){
+      const el = document.querySelector('.hero-title');
+      if(el) el.innerHTML = `${cfg.heroTitle1||'Roblox Assets'}<br><span>${cfg.heroTitle2||'คุณภาพจริง ราคาย่อมเยา'}</span>`;
+    }
+    // Hero sub
+    if(cfg.heroSub){
+      const el = document.querySelector('.hero-sub');
+      if(el) el.textContent = cfg.heroSub;
+    }
+    // Hero stats
+    const statEls = document.querySelectorAll('.hstat-n');
+    const statLEls = document.querySelectorAll('.hstat-l');
+    if(statEls.length >= 4){
+      if(cfg.stat1n) statEls[0].textContent = cfg.stat1n;
+      if(cfg.stat1l) statLEls[0].textContent = cfg.stat1l;
+      if(cfg.stat2n) statEls[1].textContent = cfg.stat2n;
+      if(cfg.stat2l) statLEls[1].textContent = cfg.stat2l;
+      if(cfg.stat4n) statEls[2].textContent = cfg.stat4n;
+      if(cfg.stat4l) statLEls[2].textContent = cfg.stat4l;
+    }
+    // Hero background
+    if(cfg.heroBgData && cfg.heroBgData.startsWith('data:')){
+      const hero = document.querySelector('.hero');
+      if(hero){
+        hero.style.backgroundImage = `url('${cfg.heroBgData}')`;
+        hero.style.backgroundSize = 'cover';
+        hero.style.backgroundPosition = 'center';
+        hero.style.position = 'relative';
+        // เพิ่ม overlay ให้ข้อความอ่านง่าย
+        const glow = hero.querySelector('.hero-glow');
+        if(glow) glow.style.background = 'rgba(0,0,0,0.4)';
+      }
+    }
+  } catch(e){ console.log('loadSiteSettings err', e); }
+}
+
 // ---- CHECK SESSION ----
 async function initAuth() {
   if(!sb) return;
@@ -667,7 +728,7 @@ async function initAuth() {
     currentUser = data.session.user;
   }
   updateNavUser();
-  await loadProductsFromDB();
+  await Promise.all([loadSiteSettings(), loadProductsFromDB()]);
 }
 
 // เพิ่ม input fields ให้หน้า login/register
