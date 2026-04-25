@@ -1,0 +1,551 @@
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-font-smoothing:antialiased}
+body{font-family:var(--font-sans)}
+:root{--c1:#00d4ff;--card:#111127;--border:rgba(255,255,255,0.08)}
+.app{background:#0a0a16;min-height:900px;color:#fff}
+.toast{position:fixed;top:64px;right:16px;background:#111127;border:0.5px solid rgba(0,212,255,.35);border-radius:10px;padding:10px 14px;display:flex;align-items:center;gap:10px;z-index:999;transform:translateX(120%);transition:transform .3s cubic-bezier(.34,1.56,.64,1);min-width:220px}
+.toast.show{transform:translateX(0)}
+.toast-ico{width:32px;height:32px;border-radius:8px;background:rgba(0,212,255,.12);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.toast-title{font-size:12px;font-weight:500;color:#fff}
+.toast-sub{font-size:10px;color:rgba(255,255,255,.4);margin-top:1px}
+.toast-bar{position:absolute;bottom:0;left:0;height:2px;background:var(--c1);border-radius:0 0 10px 10px;width:100%;transform-origin:left}
+.toast-bar.go{animation:shrink 2.5s linear forwards}
+@keyframes shrink{from{transform:scaleX(1)}to{transform:scaleX(0)}}
+
+.nav{background:#080812;border-bottom:0.5px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 1.25rem;height:54px;position:sticky;top:0;z-index:100}
+.logo{display:flex;align-items:center;gap:9px;cursor:pointer;flex-shrink:0}
+.logo-ico{width:30px;height:30px;background:linear-gradient(135deg,#00d4ff,#7b5ef8);border-radius:7px;display:flex;align-items:center;justify-content:center}
+.logo-t{font-size:15px;font-weight:500;color:#fff}
+.logo-s{font-size:10px;color:#00d4ff;opacity:.8}
+.nav-r{display:flex;align-items:center;gap:5px}
+.btn-login{padding:6px 13px;border-radius:20px;font-size:12px;cursor:pointer;border:0.5px solid rgba(255,255,255,.2);background:transparent;color:#ccc}
+.btn-login:hover{border-color:rgba(255,255,255,.4);color:#fff}
+.btn-register{padding:6px 14px;border-radius:20px;font-size:12px;cursor:pointer;border:none;background:var(--c1);color:#080812;font-weight:500}
+.nav-sep{width:0.5px;height:18px;background:rgba(255,255,255,.1);margin:0 3px}
+.nl{padding:6px 11px;border-radius:20px;font-size:12px;cursor:pointer;color:rgba(255,255,255,.5);background:none;border:none}
+.nl:hover{color:#fff;background:rgba(255,255,255,.06)}
+.cb{position:relative;background:rgba(255,255,255,.06);border:0.5px solid rgba(255,255,255,.12);color:#fff;padding:6px 14px;border-radius:20px;cursor:pointer;font-size:12px}
+.cb.pulse{animation:cbp .4s ease}
+@keyframes cbp{0%{transform:scale(1)}50%{transform:scale(1.1)}100%{transform:scale(1)}}
+.cbadge{position:absolute;top:-5px;right:-5px;background:#ff4455;color:#fff;border-radius:50%;width:16px;height:16px;font-size:9px;display:flex;align-items:center;justify-content:center;font-weight:500}
+.cbadge.pop{animation:bp .35s cubic-bezier(.34,1.56,.64,1)}
+@keyframes bp{0%{transform:scale(1)}50%{transform:scale(1.5)}100%{transform:scale(1)}}
+
+.page{display:none}.page.active{display:block}
+.slabel{font-size:10px;font-weight:500;color:rgba(255,255,255,.35);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:.75rem}
+
+.hero{background:#080812;padding:2.25rem 1.25rem 0;text-align:center;position:relative;overflow:hidden}
+.hero-glow{position:absolute;top:-60px;left:50%;transform:translateX(-50%);width:400px;height:200px;background:radial-gradient(ellipse,rgba(0,212,255,.12) 0%,rgba(123,94,248,.08) 50%,transparent 70%);pointer-events:none}
+.hero-badge{display:inline-flex;align-items:center;gap:5px;background:rgba(0,212,255,.1);border:0.5px solid rgba(0,212,255,.25);border-radius:20px;padding:3px 11px;font-size:11px;color:#00d4ff;margin-bottom:.9rem}
+.hero-title{font-size:28px;font-weight:500;color:#fff;margin-bottom:.4rem;line-height:1.2}
+.hero-title span{background:linear-gradient(90deg,#00d4ff,#7b5ef8);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.hero-sub{font-size:13px;color:rgba(255,255,255,.4);margin-bottom:1.25rem}
+.hero-btns{display:flex;gap:10px;justify-content:center;margin-bottom:1.5rem}
+.hbtn-p{padding:9px 22px;background:var(--c1);color:#080812;border:none;border-radius:20px;font-size:13px;font-weight:500;cursor:pointer}
+.hbtn-s{padding:9px 22px;background:rgba(255,255,255,.06);color:#fff;border:0.5px solid rgba(255,255,255,.15);border-radius:20px;font-size:13px;cursor:pointer}
+.hero-stats{display:flex;justify-content:center;gap:2rem;padding-bottom:1.5rem}
+.hstat-n{font-size:18px;font-weight:500;color:#fff}
+.hstat-l{font-size:11px;color:rgba(255,255,255,.35);margin-top:1px}
+
+.cat-wrap{background:#080812;padding:14px 1.25rem 16px;position:sticky;top:54px;z-index:90}
+.cat-pills{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;max-width:720px;margin:0 auto;justify-content:center;flex-wrap:wrap}
+.cat-pills::-webkit-scrollbar{display:none}
+.cpill{padding:8px 20px;border-radius:50px;font-size:13px;cursor:pointer;border:1.5px solid rgba(255,255,255,.18);background:transparent;color:rgba(255,255,255,.7);white-space:nowrap;flex-shrink:0;transition:all .15s}
+.cpill:hover{border-color:rgba(255,255,255,.4);color:#fff}
+.cpill.on{background:var(--c1);color:#080812;border-color:var(--c1);font-weight:500}
+
+.search-wrap{background:#080812;padding:.75rem 1.25rem 1rem}
+.search-row{display:flex;gap:8px;max-width:720px;margin:0 auto}
+.search-row input{flex:1;padding:9px 14px;border-radius:50px;border:0.5px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);color:#fff;font-size:13px}
+.search-row input::placeholder{color:rgba(255,255,255,.25)}
+.filter-btn{padding:9px 16px;border-radius:50px;border:0.5px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);color:rgba(255,255,255,.6);cursor:pointer;font-size:12px}
+.filter-panel{display:none;background:#0e0e1c;border:0.5px solid var(--border);border-radius:12px;padding:12px;margin-top:8px;max-width:720px;margin-left:auto;margin-right:auto}
+.filter-panel.open{display:block}
+.fp-grid{display:flex;gap:1.5rem;flex-wrap:wrap}
+.fp-label{font-size:10px;color:rgba(255,255,255,.35);margin-bottom:5px}
+.fp-pills{display:flex;gap:6px;flex-wrap:wrap}
+.fp-p{padding:4px 12px;border-radius:50px;font-size:11px;cursor:pointer;border:0.5px solid rgba(255,255,255,.1);color:rgba(255,255,255,.45)}
+.fp-p.on{border-color:var(--c1);color:var(--c1)}
+.price-inp{display:flex;align-items:center;gap:6px}
+.price-inp input{width:65px;padding:5px 9px;border-radius:50px;border:0.5px solid rgba(255,255,255,.1);background:rgba(255,255,255,.05);color:#fff;font-size:11px}
+
+.home-content{padding:.75rem 1.25rem 2.5rem;max-width:720px;margin:0 auto}
+.sec-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem}
+.sec-title{font-size:13px;font-weight:500;color:rgba(255,255,255,.5)}
+.sec-count{font-size:11px;color:rgba(255,255,255,.3)}
+.pgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:11px}
+.pcard{background:#111127;border:0.5px solid var(--border);border-radius:12px;overflow:hidden;cursor:pointer;transition:border-color .2s}
+.pcard:hover{border-color:rgba(0,212,255,.25)}
+.pthumb{height:130px;position:relative;overflow:hidden}
+.pthumb-img{width:100%;height:100%;display:flex;align-items:center;justify-content:center}
+.pthumb-hover{position:absolute;inset:0;background:rgba(8,8,18,.85);display:none;align-items:center;justify-content:center;flex-direction:column;gap:6px}
+.pcard:hover .pthumb-hover{display:flex}
+.vplay{width:38px;height:38px;border-radius:50%;background:rgba(0,212,255,.9);display:flex;align-items:center;justify-content:center}
+.vlabel{font-size:10px;color:rgba(255,255,255,.8)}
+.pbadge{position:absolute;top:7px;left:7px;font-size:9px;font-weight:500;padding:2px 8px;border-radius:50px}
+.pb-hot{background:#ff4455;color:#fff}.pb-new{background:#00d4ff;color:#080812}.pb-free{background:#3B6D11;color:#fff}
+.pinfo{padding:10px 12px 12px}
+.pcat{font-size:9px;font-weight:500;color:rgba(255,255,255,.35);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px}
+.pname-en{font-size:13px;font-weight:500;color:#fff;line-height:1.3;margin-bottom:1px}
+.pname-th{font-size:10px;color:rgba(255,255,255,.4);margin-bottom:6px}
+/* ขายแล้ว — ไม่มีคะแนน */
+.psold{font-size:10px;color:rgba(255,255,255,.35);margin-bottom:6px}
+.psold span{color:rgba(255,255,255,.55);font-weight:500}
+.pfooter{display:flex;align-items:center;gap:5px}
+.pprice{font-size:14px;font-weight:500;color:#fff;flex:1}
+.pprice-free{color:#3B6D11}
+.btn-c{flex:1;padding:5px 0;background:rgba(255,255,255,.06);color:#fff;border:0.5px solid rgba(255,255,255,.12);border-radius:50px;font-size:11px;cursor:pointer;transition:all .15s}
+.btn-c.added{background:rgba(0,212,255,.15);border-color:rgba(0,212,255,.4);color:var(--c1)}
+.btn-b{flex:1;padding:5px 0;background:var(--c1);color:#080812;border:none;border-radius:50px;font-size:11px;cursor:pointer;font-weight:500}
+
+.detail-page{background:#0a0a16;position:relative}
+.d-back{position:absolute;top:12px;left:14px;background:rgba(255,255,255,.07);border:0.5px solid rgba(255,255,255,.12);color:rgba(255,255,255,.6);border-radius:20px;padding:5px 13px;font-size:12px;cursor:pointer;z-index:10;display:flex;align-items:center;gap:5px}
+.d-back:hover{color:#fff;background:rgba(255,255,255,.12)}
+.d-top{display:flex;gap:0;max-width:960px;margin:0 auto;padding:52px 1.25rem 0}
+.d-left{flex:1;min-width:0}
+.d-right{width:260px;flex-shrink:0;padding-left:1.75rem}
+.d-main-img{width:100%;aspect-ratio:16/9;border-radius:12px;overflow:hidden;position:relative;cursor:pointer;margin-bottom:.6rem}
+.d-main-bg{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:90px}
+.d-play-ov{position:absolute;inset:0;background:rgba(8,8,18,.75);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;opacity:0;transition:opacity .2s}
+.d-main-img:hover .d-play-ov{opacity:1}
+.d-play-btn{width:54px;height:54px;border-radius:50%;background:rgba(0,212,255,.9);display:flex;align-items:center;justify-content:center}
+.d-gal{display:flex;gap:7px}
+.d-thumb{flex:1;aspect-ratio:16/9;border-radius:7px;overflow:hidden;cursor:pointer;border:1.5px solid transparent;transition:border-color .15s}
+.d-thumb.on{border-color:var(--c1)}
+.d-thumb-inner{width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.05);font-size:18px}
+.d-pop-tag{display:inline-flex;align-items:center;background:rgba(239,159,39,.15);border:0.5px solid rgba(239,159,39,.4);border-radius:20px;padding:3px 11px;font-size:11px;color:#EF9F27;margin-bottom:.65rem}
+.d-title{font-size:22px;font-weight:500;color:#fff;margin-bottom:.25rem;line-height:1.3}
+.d-price{font-size:28px;font-weight:500;color:#fff;margin-bottom:1rem}
+.d-price-free{color:#3B6D11;font-size:24px}
+.btn-get-now{width:100%;padding:14px;background:linear-gradient(135deg,rgba(210,205,255,.95),rgba(175,165,255,.9));color:#1a1a2e;border:none;border-radius:50px;font-size:16px;font-weight:500;cursor:pointer;margin-bottom:7px}
+.btn-cart-side{width:100%;padding:12px;background:rgba(255,255,255,.07);color:#fff;border:0.5px solid rgba(255,255,255,.15);border-radius:50px;font-size:14px;cursor:pointer;margin-bottom:.9rem;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:8px}
+.btn-cart-side.added{background:rgba(0,212,255,.12);border-color:rgba(0,212,255,.4);color:var(--c1)}
+.d-checks{margin-bottom:1rem}
+.d-ci{display:flex;align-items:center;gap:8px;padding:4px 0;font-size:12px;color:rgba(255,255,255,.5)}
+.d-ci-ico{width:16px;height:16px;border-radius:50%;background:rgba(0,212,255,.15);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.d-meta-box{background:rgba(255,255,255,.04);border:0.5px solid var(--border);border-radius:10px;padding:10px 12px}
+.d-mr{display:flex;justify-content:space-between;padding:4px 0;font-size:12px}
+.d-ml{color:rgba(255,255,255,.35)}.d-mv{color:#fff;font-weight:500}
+.d-body{max-width:960px;margin:0 auto;padding:1.25rem 1.25rem 3rem}
+/* tabs — เอา use case ออก */
+.dtabs{display:flex;gap:0;border-bottom:0.5px solid var(--border);margin-bottom:1.1rem}
+.dtab{padding:9px 15px;font-size:13px;cursor:pointer;color:rgba(255,255,255,.45);border-bottom:2px solid transparent;margin-bottom:-0.5px}
+.dtab.on{color:#fff;border-bottom-color:var(--c1)}
+.dc{display:none}.dc.on{display:block}
+.dc-text{font-size:13px;color:rgba(255,255,255,.5);line-height:1.75}
+.ver-row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:0.5px solid var(--border);font-size:13px}
+.ver-tag{font-size:10px;background:rgba(0,212,255,.15);color:#00d4ff;padding:2px 8px;border-radius:8px}
+.faq-item{padding:9px 0;border-bottom:0.5px solid var(--border)}
+.faq-q{font-size:13px;font-weight:500;color:#fff;margin-bottom:4px}
+.faq-a{font-size:12px;color:rgba(255,255,255,.45);line-height:1.6}
+
+.page-inner{max-width:600px;margin:0 auto;padding:1.25rem}
+.cart-wrap{background:#111127;border:0.5px solid var(--border);border-radius:12px;padding:1.25rem;margin-bottom:.75rem}
+.ci{display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:0.5px solid var(--border)}
+.ci:last-child{border-bottom:none}
+.ci-l{display:flex;align-items:center;gap:9px}
+.ci-ico{width:34px;height:34px;border-radius:7px;background:rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;font-size:18px}
+.ci-name{font-size:13px;font-weight:500;color:#fff}
+.ci-cat{font-size:10px;color:rgba(255,255,255,.35)}
+.ci-price{font-size:13px;font-weight:500;color:#fff}
+.rm-btn{background:none;border:none;color:rgba(255,255,255,.3);cursor:pointer;font-size:16px;margin-left:6px}
+.coupon-row{display:flex;gap:7px;margin-top:11px}
+.coupon-row input{flex:1;padding:7px 14px;border:0.5px solid rgba(255,255,255,.12);border-radius:50px;font-size:12px;background:rgba(255,255,255,.05);color:#fff}
+.coupon-row input::placeholder{color:rgba(255,255,255,.25)}
+.apply-btn{padding:7px 16px;background:#080812;color:var(--c1);border:0.5px solid var(--c1);border-radius:50px;font-size:12px;cursor:pointer}
+.coup-msg{font-size:11px;margin-top:5px;padding-left:4px}
+.coup-ok{color:#97C459}.coup-err{color:#F09595}
+.disc-line{display:flex;justify-content:space-between;font-size:12px;padding:3px 0}
+.disc-lbl{color:rgba(255,255,255,.35)}.disc-val{color:#97C459;font-weight:500}
+.total-line{display:flex;justify-content:space-between;align-items:center;padding:11px 0 3px;border-top:0.5px solid var(--border);margin-top:8px}
+.total-lbl{font-size:13px;color:rgba(255,255,255,.45)}
+.total-amt{font-size:20px;font-weight:500;color:#fff}
+.pay-btn-main{width:100%;padding:12px;background:var(--c1);color:#080812;border:none;border-radius:50px;font-size:13px;font-weight:500;cursor:pointer;margin-top:.75rem}
+.back-btn{background:none;border:none;color:rgba(255,255,255,.45);cursor:pointer;font-size:12px;padding:0;margin-bottom:1rem;display:flex;align-items:center;gap:5px}
+.bank-box{background:#04200f;border:0.5px solid rgba(0,150,94,.3);border-radius:12px;padding:1rem 1.25rem;margin-bottom:.75rem}
+.bank-hd{display:flex;align-items:center;gap:8px;margin-bottom:.75rem}
+.bank-logo{width:26px;height:26px;background:#00965e;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;color:#fff;font-weight:500}
+.bank-title{font-size:12px;font-weight:500;color:#9FE1CB}
+.brow{display:flex;justify-content:space-between;padding:3px 0;font-size:12px}
+.bk{color:#5DCAA5}.bv{color:#9FE1CB;font-weight:500}
+.bamt{font-size:20px;font-weight:500;color:#9FE1CB;text-align:center;padding:8px;background:rgba(0,150,94,.1);border-radius:8px;margin-top:9px}
+.status-bar{display:flex;margin-bottom:1rem;gap:4px}
+.status-step{flex:1;padding:7px 5px;text-align:center;font-size:10px;background:rgba(255,255,255,.04);border:0.5px solid var(--border);border-radius:50px}
+.status-step.done{background:rgba(0,212,255,.12);color:var(--c1);border-color:rgba(0,212,255,.2)}
+.status-step.active{background:rgba(0,212,255,.2);color:var(--c1);border-color:var(--c1);font-weight:500}
+.upload-area{border:1.5px dashed rgba(255,255,255,.15);border-radius:12px;padding:1.75rem 1rem;text-align:center;cursor:pointer;background:rgba(255,255,255,.03);margin-bottom:.75rem}
+.uico{font-size:26px;margin-bottom:5px}
+.utxt{font-size:13px;color:rgba(255,255,255,.5)}
+.usub{font-size:10px;color:rgba(255,255,255,.25);margin-top:3px}
+.ai-chk{display:none;padding:.75rem;text-align:center}.ai-chk.show{display:block}
+.dots{display:flex;justify-content:center;gap:5px;margin-bottom:6px}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--c1);animation:pu 1.2s ease-in-out infinite}
+.dot:nth-child(2){animation-delay:.2s}.dot:nth-child(3){animation-delay:.4s}
+@keyframes pu{0%,80%,100%{opacity:.3;transform:scale(.8)}40%{opacity:1;transform:scale(1)}}
+.aitxt{font-size:12px;color:rgba(255,255,255,.45)}
+.r-box{display:none;border-radius:12px;padding:.85rem;margin-bottom:.75rem;text-align:center}
+.r-box.show{display:block}
+.r-ok{background:rgba(39,80,10,.2);border:0.5px solid rgba(96,157,17,.3)}
+.r-fail{background:rgba(79,19,19,.2);border:0.5px solid rgba(163,45,45,.3)}
+.r-ico{font-size:22px;margin-bottom:4px}
+.r-title{font-size:13px;font-weight:500}
+.r-ok .r-title{color:#C0DD97}.r-fail .r-title{color:#F7C1C1}
+.r-sub{font-size:11px;margin-top:3px}
+.r-ok .r-sub{color:#97C459}.r-fail .r-sub{color:#F09595}
+.dl-item{display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,.04);border:0.5px solid var(--border);border-radius:8px;padding:8px 12px;margin-bottom:6px}
+.dl-name{font-size:12px;font-weight:500;color:#fff}
+.dl-btn{background:#080812;color:var(--c1);border:0.5px solid var(--c1);border-radius:50px;padding:4px 12px;font-size:11px;cursor:pointer}
+.support-note{background:rgba(123,94,248,.08);border:0.5px solid rgba(123,94,248,.2);border-radius:8px;padding:10px 12px;font-size:12px;color:rgba(255,255,255,.45);text-align:center;margin-top:.75rem}
+.ma-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(185px,1fr));gap:10px}
+.ma-card{background:#111127;border:0.5px solid var(--border);border-radius:12px;padding:13px}
+.ma-top{display:flex;align-items:center;gap:9px;margin-bottom:8px}
+.ma-ico{font-size:26px}.ma-name{font-size:12px;font-weight:500;color:#fff}.ma-date{font-size:10px;color:rgba(255,255,255,.35)}
+.ma-ver{font-size:10px;color:var(--c1);margin-bottom:7px;display:flex;align-items:center;gap:5px}
+.upd-badge{background:rgba(0,212,255,.12);border:0.5px solid rgba(0,212,255,.2);border-radius:50px;padding:1px 8px;font-size:9px;color:var(--c1)}
+.ma-btns{display:flex;gap:6px}
+.ma-dl{flex:1;padding:6px 0;background:#080812;color:var(--c1);border:0.5px solid var(--c1);border-radius:50px;font-size:11px;cursor:pointer;text-align:center}
+.ma-tut{flex:1;padding:6px 0;border:0.5px solid rgba(255,255,255,.1);color:rgba(255,255,255,.5);border-radius:50px;font-size:11px;cursor:pointer;text-align:center}
+.cc-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:1.25rem}
+.cc{background:#111127;border:0.5px solid var(--border);border-radius:12px;padding:1.1rem;text-align:center;cursor:pointer}
+.cc:hover{border-color:rgba(0,212,255,.25)}
+.cc-ico{width:42px;height:42px;border-radius:50%;margin:0 auto 8px;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:500}
+.cc-name{font-size:13px;font-weight:500;color:#fff;margin-bottom:2px}.cc-handle{font-size:11px;color:rgba(255,255,255,.35)}
+.auth-card{background:#111127;border:0.5px solid var(--border);border-radius:16px;padding:1.5rem}
+.auth-title{font-size:17px;font-weight:500;color:#fff;margin-bottom:3px}
+.auth-sub{font-size:12px;color:rgba(255,255,255,.35);margin-bottom:1.25rem}
+.field{margin-bottom:.75rem}
+.field label{font-size:11px;color:rgba(255,255,255,.45);display:block;margin-bottom:5px}
+.field input{width:100%;padding:9px 14px;border:0.5px solid rgba(255,255,255,.12);border-radius:50px;background:rgba(255,255,255,.05);color:#fff;font-size:13px}
+.field input::placeholder{color:rgba(255,255,255,.2)}
+.auth-btn{width:100%;padding:10px;background:var(--c1);color:#080812;border:none;border-radius:50px;font-size:13px;font-weight:500;cursor:pointer;margin-top:4px}
+.social-row{display:flex;gap:8px;margin-bottom:1rem}
+.social-btn{flex:1;padding:8px;border:0.5px solid rgba(255,255,255,.12);border-radius:50px;background:rgba(255,255,255,.04);color:rgba(255,255,255,.6);font-size:12px;cursor:pointer;text-align:center}
+.auth-divider{text-align:center;font-size:11px;color:rgba(255,255,255,.25);margin-bottom:1rem;position:relative}
+.auth-divider::before,.auth-divider::after{content:'';position:absolute;top:50%;width:37%;height:0.5px;background:rgba(255,255,255,.1)}
+.auth-divider::before{left:0}.auth-divider::after{right:0}
+.auth-sw{text-align:center;margin-top:.75rem;font-size:11px;color:rgba(255,255,255,.35)}
+.auth-lnk{color:var(--c1);cursor:pointer;text-decoration:underline}
+</style>
+
+
+<div class="toast" id="toast"><div class="toast-ico" id="ti"></div><div class="toast-text"><div class="toast-title" id="tt"></div><div class="toast-sub" id="ts"></div></div><div class="toast-bar" id="tb"></div></div>
+
+<div class="app">
+<nav class="nav">
+  <div class="logo" onclick="go('home')">
+    <div class="logo-ico" id="site-icon"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="1" width="6" height="6" rx="1.5" fill="white"/><rect x="9" y="1" width="6" height="6" rx="1.5" fill="white"/><rect x="1" y="9" width="6" height="6" rx="1.5" fill="white"/><rect x="9" y="9" width="6" height="6" rx="1.5" fill="white"/></svg></div>
+    <div><div class="logo-t" id="site-name">RBX Market</div></div>
+  </div>
+  <div class="nav-r">
+    <button class="btn-login" onclick="go('login')">เข้าสู่ระบบ</button>
+    <button class="btn-register" onclick="go('register')">สมัครสมาชิก</button>
+    <div class="nav-sep"></div>
+    <button class="nl" onclick="go('contact')">ติดต่อ</button>
+    <button class="nl" onclick="go('myassets')">My Assets</button>
+    <div class="nav-sep"></div>
+    <button class="cb" id="cart-btn" onclick="go('cart')">ตะกร้า<span class="cbadge" id="cc">0</span></button>
+  </div>
+</nav>
+
+<div id="page-home" class="page active">
+  <div class="hero">
+    <div class="hero-glow"></div>
+    <div class="hero-badge"><span style="font-size:8px">●</span> 48 assets พร้อมขาย</div>
+    <div class="hero-title">Roblox Assets<br><span>คุณภาพจริง ราคาย่อมเยา</span></div>
+    <div class="hero-sub">Script · 3D Model · Animation · VFX · UI · Icon ครบจบที่เดียว</div>
+    <div class="hero-btns">
+      <button class="hbtn-p" onclick="scrollToShop()">ดูสินค้าทั้งหมด ↓</button>
+      <button class="hbtn-s" onclick="go('contact')">ติดต่อ / สอบถาม</button>
+    </div>
+    <div class="hero-stats">
+      <div><div class="hstat-n">48+</div><div class="hstat-l">Assets</div></div>
+      <div><div class="hstat-n">1.2K+</div><div class="hstat-l">ดาวน์โหลด</div></div>
+      <div><div class="hstat-n">4.8</div><div class="hstat-l">คะแนนเฉลี่ย</div></div>
+      <div><div class="hstat-n">250+</div><div class="hstat-l">ลูกค้า</div></div>
+    </div>
+  </div>
+  <div class="cat-wrap" id="shop-anchor">
+    <div class="cat-pills">
+      <div class="cpill on" onclick="setCat(this,'all')">ทั้งหมด</div>
+      <div class="cpill" onclick="setCat(this,'script')">Script</div>
+      <div class="cpill" onclick="setCat(this,'3dmodel')">3D Model</div>
+      <div class="cpill" onclick="setCat(this,'animation')">Animation</div>
+      <div class="cpill" onclick="setCat(this,'vfx')">VFX</div>
+      <div class="cpill" onclick="setCat(this,'ui')">UI</div>
+      <div class="cpill" onclick="setCat(this,'icon')">Icon Pack</div>
+      <div class="cpill" onclick="setCat(this,'free')">Free</div>
+    </div>
+  </div>
+  <div class="search-wrap">
+    <div class="search-row">
+      <input type="text" placeholder="ค้นหา เช่น combat, inventory..." id="si" oninput="renderGrid()">
+      <button class="filter-btn" onclick="document.getElementById('fp').classList.toggle('open')">ตัวกรอง ▾</button>
+    </div>
+    <div class="filter-panel" id="fp">
+      <div class="fp-grid">
+        <div><div class="fp-label">ราคา (บาท)</div><div class="price-inp"><input type="number" id="pmin" placeholder="0" onchange="renderGrid()"><span style="color:rgba(255,255,255,.3)">—</span><input type="number" id="pmax" placeholder="ไม่จำกัด" onchange="renderGrid()"></div></div>
+        <div><div class="fp-label">เรียงตาม</div><div class="fp-pills"><div class="fp-p on" onclick="setSort(this,'pop')">ยอดนิยม</div><div class="fp-p" onclick="setSort(this,'new')">ใหม่สุด</div><div class="fp-p" onclick="setSort(this,'cheap')">ราคาต่ำ</div></div></div>
+        <div><div class="fp-label">ประเภท</div><div class="fp-pills"><div class="fp-p on" onclick="setPaid(this,'all')">ทั้งหมด</div><div class="fp-p" onclick="setPaid(this,'paid')">เสียเงิน</div><div class="fp-p" onclick="setPaid(this,'free')">ฟรี</div></div></div>
+      </div>
+    </div>
+  </div>
+  <div class="home-content">
+    <div class="sec-hd"><div class="sec-title" id="grid-label">สินค้าทั้งหมด</div><div class="sec-count" id="grid-count"></div></div>
+    <div class="pgrid" id="main-grid"></div>
+  </div>
+</div>
+
+<div id="page-detail" class="page detail-page">
+  <button class="d-back" onclick="go('home')">← Back to Store</button>
+  <div class="d-top">
+    <div class="d-left">
+      <div class="d-main-img" id="d-main-img"><div class="d-main-bg" id="d-main-bg"></div><div class="d-play-ov"><div class="d-play-btn"><svg width="16" height="18" viewBox="0 0 16 18" fill="white"><polygon points="0,0 16,9 0,18"/></svg></div><div style="font-size:12px;color:rgba(255,255,255,.8)">เล่น Preview</div></div></div>
+      <div class="d-gal" id="d-gal"></div>
+    </div>
+    <div class="d-right">
+      <div class="d-pop-tag" id="d-pop" style="display:none">Popular</div>
+      <div class="d-title" id="d-title"></div>
+      <div class="d-price" id="d-price"></div>
+      <button class="btn-get-now" id="d-buy">ซื้อเลย (Buy Now)</button>
+      <button class="btn-cart-side" id="d-cart">+ ใส่ตะกร้า</button>
+      <div class="d-checks">
+        <div class="d-ci"><div class="d-ci-ico"><svg viewBox="0 0 9 9" fill="none" width="9" height="9"><polyline points="1,4.5 3.5,7 8,2" stroke="#00d4ff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>ดาวน์โหลดได้ทันทีหลังชำระ</div>
+        <div class="d-ci"><div class="d-ci-ico"><svg viewBox="0 0 9 9" fill="none" width="9" height="9"><polyline points="1,4.5 3.5,7 8,2" stroke="#00d4ff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>อัปเดตฟรีตลอดชีพ</div>
+        <div class="d-ci"><div class="d-ci-ico"><svg viewBox="0 0 9 9" fill="none" width="9" height="9"><polyline points="1,4.5 3.5,7 8,2" stroke="#00d4ff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>ใช้ได้ไม่จำกัดเกม</div>
+        <div class="d-ci"><div class="d-ci-ico"><svg viewBox="0 0 9 9" fill="none" width="9" height="9"><polyline points="1,4.5 3.5,7 8,2" stroke="#00d4ff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>เข้าถึง My Assets ตลอดเวลา</div>
+      </div>
+      <div class="d-meta-box">
+        <div class="d-mr"><span class="d-ml">หมวดหมู่</span><span class="d-mv" id="d-mcat"></span></div>
+        <div class="d-mr"><span class="d-ml">รูปแบบ</span><span class="d-mv">.rbxm</span></div>
+        <div class="d-mr"><span class="d-ml">เวอร์ชัน</span><span class="d-mv">v2.1.0</span></div>
+        <div class="d-mr"><span class="d-ml">ขายไปแล้ว</span><span class="d-mv" id="d-msold"></span></div>
+      </div>
+    </div>
+  </div>
+  <div class="d-body">
+    <div class="dtabs">
+      <div class="dtab on" onclick="tab(this,'info')">รายละเอียด</div>
+      <div class="dtab" onclick="tab(this,'howto')">วิธีใช้</div>
+      <div class="dtab" onclick="tab(this,'changelog')">อัปเดต</div>
+      <div class="dtab" onclick="tab(this,'faq')">FAQ</div>
+    </div>
+    <div class="dc on" id="tab-info"><div class="dc-text" id="d-info-text"></div></div>
+    <div class="dc" id="tab-howto"><div class="dc-text">1. ดาวน์โหลดไฟล์ .rbxm หลังชำระเงิน<br>2. เปิด Roblox Studio → Explorer<br>3. Import เข้า ServerScriptService<br>4. ปรับ config ตาม README<br>5. Playtest ได้เลยครับ<br><br>มีคลิปสอนใน My Assets ครับ</div></div>
+    <div class="dc" id="tab-changelog">
+      <div class="ver-row"><span style="color:#fff;font-weight:500">v2.1.0</span><span class="ver-tag">Latest</span></div>
+      <div style="font-size:12px;color:rgba(255,255,255,.35);padding:5px 0 10px">เพิ่ม UI ใหม่ · fix permission bug · mobile support</div>
+      <div class="ver-row"><span style="color:rgba(255,255,255,.6)">v2.0.0</span><span style="font-size:11px;color:rgba(255,255,255,.3)">15 มี.ค. 2026</span></div>
+      <div style="font-size:12px;color:rgba(255,255,255,.35);padding:5px 0 10px">Rewrite ใหม่ · DataStore v2</div>
+      <div class="ver-row"><span style="color:rgba(255,255,255,.6)">v1.0.0</span><span style="font-size:11px;color:rgba(255,255,255,.3)">1 ม.ค. 2026</span></div>
+    </div>
+    <div class="dc" id="tab-faq">
+      <div class="faq-item"><div class="faq-q">ใช้ได้กี่เกม?</div><div class="faq-a">ใช้ได้ไม่จำกัด ซื้อแล้วเป็นของคุณตลอดไปครับ</div></div>
+      <div class="faq-item"><div class="faq-q">มีอัปเดตฟรีไหม?</div><div class="faq-a">ทุก version ดาวน์โหลดฟรีใน My Assets ครับ</div></div>
+      <div class="faq-item"><div class="faq-q">แก้โค้ดเองได้ไหม?</div><div class="faq-a">ได้เลย ไม่มีล็อคหรือ obfuscate ใดๆ</div></div>
+      <div class="faq-item"><div class="faq-q">ไม่ได้รับสินค้าทำอย่างไร?</div><div class="faq-a">ติดต่อ Facebook จัดการภายใน 24 ชม.</div></div>
+    </div>
+  </div>
+</div>
+
+<div id="page-cart" class="page"><div class="page-inner">
+  <button class="back-btn" onclick="go('home')">← กลับ</button>
+  <div class="slabel">ตะกร้าสินค้า</div>
+  <div class="cart-wrap"><div id="cart-items"></div>
+    <div style="border-top:0.5px solid var(--border);padding-top:10px">
+      <div class="coupon-row"><input type="text" placeholder="โค้ดส่วนลด — RBX10 / VIP50 / NEWBIE" id="ci2"><button class="apply-btn" onclick="applyCoupon()">ใช้โค้ด</button></div>
+      <div class="coup-msg" id="cm"></div>
+      <div class="disc-line" id="dline" style="display:none"><span class="disc-lbl">ส่วนลด</span><span class="disc-val" id="dval"></span></div>
+      <div class="total-line"><span class="total-lbl">รวมทั้งหมด</span><span class="total-amt" id="ctotal">฿ 0</span></div>
+    </div>
+  </div>
+  <button class="pay-btn-main" onclick="go('checkout')">ดำเนินการชำระเงิน →</button>
+</div></div>
+
+<div id="page-checkout" class="page"><div class="page-inner">
+  <button class="back-btn" onclick="go('cart')">← กลับตะกร้า</button>
+  <div class="slabel">ชำระเงิน</div>
+  <div class="status-bar">
+    <div class="status-step done">เลือกสินค้า ✓</div>
+    <div class="status-step done">ตะกร้า ✓</div>
+    <div class="status-step active" id="st-pay">รอชำระ</div>
+    <div class="status-step" id="st-chk">ตรวจสลิป</div>
+    <div class="status-step" id="st-done">เสร็จ</div>
+  </div>
+  <div class="bank-box">
+    <div class="bank-hd"><div class="bank-logo">K</div><div class="bank-title">โอนเงิน — ธนาคารกรุงไทย (KTB)</div></div>
+    <div class="brow"><span class="bk">ชื่อบัญชี</span><span class="bv">นาย ตัวอย่าง ร้านค้า</span></div>
+    <div class="brow"><span class="bk">เลขบัญชี</span><span class="bv">123-4-56789-0</span></div>
+    <div class="brow"><span class="bk">QR PromptPay</span><span class="bv">0812345678</span></div>
+    <div class="bamt" id="payamt">฿ 0 บาท</div>
+  </div>
+  <div class="cart-wrap">
+    <div class="slabel" style="margin-bottom:.75rem">อัปโหลดสลิปโอนเงิน</div>
+    <div style="font-size:11px;color:rgba(255,255,255,.3);margin-bottom:.75rem">AI จะตรวจสอบยอด เลขบัญชี วันที่ โดยอัตโนมัติ</div>
+    <div class="upload-area" onclick="simUpload()"><div class="uico">📄</div><div class="utxt">คลิกเพื่ออัปโหลดสลิป</div><div class="usub">PNG · JPG · ไม่เกิน 5MB</div></div>
+    <div class="ai-chk" id="aichk"><div class="dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div><div class="aitxt">AI กำลังอ่านสลิป...</div></div>
+    <div class="r-box r-ok" id="rok"><div class="r-ico">✅</div><div class="r-title">ยืนยันการชำระเงินสำเร็จ</div><div class="r-sub">ยอดและบัญชีถูกต้อง</div></div>
+    <div class="r-box r-fail" id="rfail"><div class="r-ico">❌</div><div class="r-title">ตรวจสอบไม่ผ่าน</div><div class="r-sub">กรุณาอัปโหลดสลิปอีกครั้ง</div></div>
+    <div id="dllist" style="display:none"><div class="slabel" style="margin-top:.75rem;margin-bottom:.5rem">ดาวน์โหลด Assets</div><div id="dlitems"></div></div>
+  </div>
+  <div class="support-note">มีปัญหา? ติดต่อ <span style="color:var(--c1);cursor:pointer" onclick="go('contact')">Facebook</span></div>
+</div></div>
+
+<div id="page-myassets" class="page"><div class="page-inner" style="max-width:720px">
+  <button class="back-btn" onclick="go('home')">← กลับ</button>
+  <div class="slabel">My Assets</div>
+  <div class="ma-grid">
+    <div class="ma-card"><div class="ma-top"><div class="ma-ico">🖥️</div><div><div class="ma-name">Admin Command System Pro</div><div class="ma-date">ซื้อ 20 เม.ย. 2026</div></div></div><div class="ma-ver">v2.1.0 <span class="upd-badge">อัปเดตใหม่!</span></div><div class="ma-btns"><div class="ma-dl">ดาวน์โหลด</div><div class="ma-tut">คลิปสอน</div></div></div>
+    <div class="ma-card"><div class="ma-top"><div class="ma-ico">✨</div><div><div class="ma-name">Magic Spell Effects Pack</div><div class="ma-date">ซื้อ 18 เม.ย. 2026</div></div></div><div class="ma-ver">v1.3.0</div><div class="ma-btns"><div class="ma-dl">ดาวน์โหลด</div><div class="ma-tut">คลิปสอน</div></div></div>
+    <div class="ma-card"><div class="ma-top"><div class="ma-ico">🏰</div><div><div class="ma-name">Medieval Castle Pack</div><div class="ma-date">ซื้อ 10 เม.ย. 2026</div></div></div><div class="ma-ver">v1.1.0 <span class="upd-badge">อัปเดตใหม่!</span></div><div class="ma-btns"><div class="ma-dl">ดาวน์โหลด</div><div class="ma-tut">คลิปสอน</div></div></div>
+  </div>
+</div></div>
+
+<div id="page-contact" class="page"><div class="page-inner" style="max-width:520px">
+  <button class="back-btn" onclick="go('home')">← กลับ</button>
+  <div class="slabel">ติดต่อเรา</div>
+  <div style="display:flex;justify-content:center;margin-bottom:1.25rem">
+    <div class="cc" style="width:200px"><div class="cc-ico" style="background:rgba(24,95,165,.2)"><span style="color:#378ADD;font-weight:500">f</span></div><div class="cc-name">Facebook</div><div class="cc-handle">@RBXMarketTH</div></div>
+  </div>
+  <div style="background:#111127;border:0.5px solid var(--border);border-radius:12px;padding:1rem 1.25rem;font-size:13px;color:rgba(255,255,255,.45);line-height:1.7">ติดต่อสอบถาม ก่อนซื้อ หรือมีปัญหาหลังซื้อ ทักมาได้เลยครับ</div>
+</div></div>
+
+<div id="page-register" class="page"><div class="page-inner" style="max-width:380px">
+  <button class="back-btn" onclick="go('home')">← กลับ</button>
+  <div class="auth-card">
+    <div class="auth-title">สมัครสมาชิก</div><div class="auth-sub">สร้างบัญชีเพื่อซื้อและดาวน์โหลด Assets</div>
+    <div class="social-row"><div class="social-btn">G  Google</div><div class="social-btn">f  Facebook</div></div>
+    <div class="auth-divider">หรือ</div>
+    <div class="field"><label>ชื่อผู้ใช้</label><input type="text" placeholder="เช่น roblox_dev99"></div>
+    <div class="field"><label>อีเมล</label><input type="email" placeholder="your@email.com"></div>
+    <div class="field"><label>รหัสผ่าน</label><input type="password" placeholder="••••••••"></div>
+    <button class="auth-btn" onclick="go('home')">สมัครสมาชิก →</button>
+    <div class="auth-sw">มีบัญชีแล้ว? <span class="auth-lnk" onclick="go('login')">เข้าสู่ระบบ</span></div>
+  </div>
+</div></div>
+
+<div id="page-login" class="page"><div class="page-inner" style="max-width:380px">
+  <button class="back-btn" onclick="go('home')">← กลับ</button>
+  <div class="auth-card">
+    <div class="auth-title">เข้าสู่ระบบ</div><div class="auth-sub">ยินดีต้อนรับกลับมาครับ</div>
+    <div class="social-row"><div class="social-btn">G  Google</div><div class="social-btn">f  Facebook</div></div>
+    <div class="auth-divider">หรือ</div>
+    <div class="field"><label>อีเมล</label><input type="email" placeholder="your@email.com"></div>
+    <div class="field"><label>รหัสผ่าน</label><input type="password" placeholder="••••••••"></div>
+    <button class="auth-btn" onclick="go('home')">เข้าสู่ระบบ →</button>
+    <div class="auth-sw">ยังไม่มีบัญชี? <span class="auth-lnk" onclick="go('register')">สมัครสมาชิก</span></div>
+  </div>
+</div></div>
+</div>
+
+<script>
+const SUPABASE_URL = "https://qjkpkgcgyqmcvluodzfy.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFqa3BrZ2NneXFtY3ZsdW9kemZ5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzcxMjMwMTcsImV4cCI6MjA5MjY5OTAxN30.q2dsV9wKe_cu6rX--I95AR0dHxx4m-ZkRyTu-1qd0XM";
+</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const P=[
+  {id:0,cat:'script',icon:'🖥️',bg:'#1a1a2e',en:'Admin Command System Pro',th:'ระบบคำสั่ง Admin ขั้นสูง',price:299,sold:342,badge:'hot',info:'รองรับผู้เล่น 100 คน · permission 5 ระดับ · GUI built-in · อัปเดตฟรีตลอดชีพ'},
+  {id:1,cat:'3dmodel',icon:'🏰',bg:'#16213e',en:'Medieval Castle Pack',th:'แพ็ค 3D ปราสาทยุคกลาง',price:450,sold:201,badge:'new',info:'40+ ชิ้นส่วน · texture 2K · optimized polygon · LOD support'},
+  {id:2,cat:'vfx',icon:'✨',bg:'#0f1923',en:'Magic Spell Effects Pack',th:'แพ็ค VFX เวทมนตร์',price:199,sold:589,badge:'',info:'20 spell effects · particle optimized · loop/oneshot · color customizable'},
+  {id:3,cat:'animation',icon:'🎭',bg:'#1a1228',en:'Combat Animation Bundle',th:'ชุด Animation การต่อสู้',price:350,sold:178,badge:'',info:'30 animations · R15 compatible · smooth blend'},
+  {id:4,cat:'script',icon:'⚙️',bg:'#1a1a2e',en:'Inventory System v2',th:'ระบบ Inventory เวอร์ชัน 2',price:249,sold:133,badge:'new',info:'Drag & drop UI · DataStore save · stack system'},
+  {id:5,cat:'vfx',icon:'💥',bg:'#0f1923',en:'Explosion FX Collection',th:'คอลเลกชัน VFX ระเบิด',price:149,sold:267,badge:'',info:'15 types · scalable · performance friendly'},
+  {id:6,cat:'animation',icon:'🕺',bg:'#1a1228',en:'Emote Animation Pack',th:'แพ็ค Emote น่ารัก',price:179,sold:445,badge:'hot',info:'25 emotes · R15/R6 compatible · looping'},
+  {id:7,cat:'free',icon:'🎁',bg:'#0a1a06',en:'Basic Leaderboard Script',th:'สคริปต์ Leaderboard เบื้องต้น',price:0,sold:1200,badge:'free',info:'DataStore · top 10 · auto refresh · easy setup'},
+  {id:8,cat:'ui',icon:'🎮',bg:'#1a0f2e',en:'HUD Interface Pack',th:'แพ็ค HUD สำหรับเกม',price:220,sold:189,badge:'new',info:'Health/Stamina bar · Minimap · Mobile ready'},
+  {id:9,cat:'icon',icon:'🔷',bg:'#0f1a2e',en:'UI Icon Pack v3',th:'ชุดไอคอน UI 150 แบบ',price:149,sold:320,badge:'',info:'150+ icons · SVG · dark/light variants'},
+];
+let cart=[],disc=0,discLabel='',curCat='all',paidFilter='all',sortMode='pop',toastTimer=null;
+function showToast(icon,title,sub){const t=document.getElementById('toast'),bar=document.getElementById('tb');document.getElementById('ti').textContent=icon;document.getElementById('tt').textContent=title;document.getElementById('ts').textContent=sub;bar.classList.remove('go');void bar.offsetWidth;bar.classList.add('go');t.classList.add('show');if(toastTimer)clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),2700);}
+function go(p){document.querySelectorAll('.page').forEach(el=>el.classList.remove('active'));document.getElementById('page-'+p).classList.add('active');if(p==='cart')renderCart();if(p==='checkout')renderCheckout();if(p==='home')renderGrid();}
+function scrollToShop(){document.getElementById('shop-anchor').scrollIntoView({behavior:'smooth'});}
+function setCat(el,cat){document.querySelectorAll('.cpill').forEach(p=>p.classList.remove('on'));el.classList.add('on');curCat=cat;renderGrid();}
+function setSort(el,m){el.closest('.fp-pills').querySelectorAll('.fp-p').forEach(p=>p.classList.remove('on'));el.classList.add('on');sortMode=m;renderGrid();}
+function setPaid(el,v){el.closest('.fp-pills').querySelectorAll('.fp-p').forEach(p=>p.classList.remove('on'));el.classList.add('on');paidFilter=v;renderGrid();}
+function renderGrid(){
+  const q=(document.getElementById('si')?document.getElementById('si').value:'').toLowerCase();
+  const pmin=parseFloat(document.getElementById('pmin')?document.getElementById('pmin').value:0)||0;
+  const pmax=parseFloat(document.getElementById('pmax')?document.getElementById('pmax').value:Infinity)||Infinity;
+  const list=P.filter(p=>{
+    if(curCat!=='all'&&p.cat!==curCat)return false;
+    if(q&&!p.en.toLowerCase().includes(q)&&!p.th.includes(q))return false;
+    if(p.price<pmin||p.price>pmax)return false;
+    if(paidFilter==='paid'&&p.price===0)return false;
+    if(paidFilter==='free'&&p.price>0)return false;
+    return true;
+  }).sort((a,b)=>{
+    if(sortMode==='cheap')return a.price-b.price;
+    if(sortMode==='new')return(b.badge==='new'?1:0)-(a.badge==='new'?1:0);
+    return b.sold-a.sold;
+  });
+  const catL={all:'สินค้าทั้งหมด',script:'Script',animation:'Animation','3dmodel':'3D Model',vfx:'VFX',ui:'UI',icon:'Icon Pack',free:'ของฟรี'};
+  document.getElementById('grid-label').textContent=catL[curCat]||curCat;
+  document.getElementById('grid-count').textContent=list.length+' รายการ';
+  const grid=document.getElementById('main-grid');
+  if(!list.length){grid.innerHTML='<div style="grid-column:1/-1;text-align:center;padding:2rem;color:rgba(255,255,255,.3);font-size:13px">ไม่พบสินค้า</div>';return;}
+  grid.innerHTML=list.map(p=>{
+    const inCart=!!cart.find(i=>i.id===p.id);
+    return`<div class="pcard" onclick="openDetail(${p.id})">
+      <div class="pthumb" style="background:${p.bg}">
+        <div class="pthumb-img"><span style="font-size:50px">${p.icon}</span></div>
+        <div class="pthumb-hover"><div class="vplay"><svg width="12" height="14" viewBox="0 0 12 14" fill="white"><polygon points="0,0 12,7 0,14"/></svg></div><div class="vlabel">Preview</div></div>
+        ${p.badge?`<div class="pbadge pb-${p.badge}">${p.badge==='hot'?'HOT':p.badge==='new'?'NEW':'FREE'}</div>`:''}
+      </div>
+      <div class="pinfo">
+        <div class="pcat">${p.cat==='3dmodel'?'3D Model':p.cat==='ui'?'UI':p.cat==='icon'?'Icon Pack':p.cat.charAt(0).toUpperCase()+p.cat.slice(1)}</div>
+        <div class="pname-en">${p.en}</div>
+        <div class="pname-th">${p.th}</div>
+        <div class="psold">ขายแล้ว <span>${p.sold.toLocaleString()}</span> ชิ้น</div>
+        <div class="pfooter">
+          <div class="pprice ${p.price===0?'pprice-free':''}">${p.price===0?'ฟรี':'฿'+p.price}</div>
+          <button class="btn-c${inCart?' added':''}" onclick="event.stopPropagation();addCart(${p.id})">${inCart?'✓':'+ ตะกร้า'}</button>
+          <button class="btn-b" onclick="event.stopPropagation();buyNow(${p.id})">ซื้อเลย</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+function addCart(id,fromDetail=false){const already=!!cart.find(i=>i.id===id),p=P[id];if(!already)cart.push(p);badge();if(fromDetail){const btn=document.getElementById('d-cart');if(btn){btn.textContent='✓ อยู่ในตะกร้าแล้ว';btn.classList.add('added');}}showToast(p.icon,already?'มีในตะกร้าแล้ว':'เพิ่มลงตะกร้าแล้ว',p.en);}
+function badge(){const el=document.getElementById('cc'),btn=document.getElementById('cart-btn');el.textContent=cart.length;el.classList.remove('pop');btn.classList.remove('pulse');void el.offsetWidth;el.classList.add('pop');btn.classList.add('pulse');}
+function buyNow(id){if(!cart.find(i=>i.id===id))cart.push(P[id]);badge();go('cart');}
+function rmCart(i){cart.splice(i,1);badge();renderCart();}
+function openDetail(id){
+  const p=P[id],inCart=!!cart.find(i=>i.id===id);
+  document.getElementById('d-main-img').style.background=p.bg;
+  document.getElementById('d-main-bg').style.background=p.bg;
+  document.getElementById('d-main-bg').textContent=p.icon;
+  const pop=document.getElementById('d-pop');pop.style.display=(p.badge==='hot'||p.sold>400)?'inline-flex':'none';pop.textContent=p.badge==='hot'?'Hot':'Popular';
+  document.getElementById('d-title').textContent=p.en;
+  document.getElementById('d-price').textContent=p.price===0?'ฟรี':'฿'+p.price;
+  document.getElementById('d-price').className=p.price===0?'d-price d-price-free':'d-price';
+  document.getElementById('d-info-text').textContent=p.info;
+  document.getElementById('d-mcat').textContent=p.cat==='3dmodel'?'3D Model':p.cat;
+  document.getElementById('d-msold').textContent=p.sold.toLocaleString()+' ชิ้น';
+  document.getElementById('d-gal').innerHTML=['🖼️','🎬','📐','🔧'].map((ic,i)=>`<div class="d-thumb${i===0?' on':''}"><div class="d-thumb-inner" style="background:${p.bg}">${ic}</div></div>`).join('');
+  const cartBtn=document.getElementById('d-cart');cartBtn.textContent=inCart?'✓ อยู่ในตะกร้าแล้ว':'+ ใส่ตะกร้า';cartBtn.className='btn-cart-side'+(inCart?' added':'');
+  document.getElementById('d-buy').onclick=()=>buyNow(id);
+  document.getElementById('d-cart').onclick=()=>addCart(id,true);
+  document.querySelectorAll('.dtab').forEach(d=>d.classList.remove('on'));document.querySelectorAll('.dc').forEach(d=>d.classList.remove('on'));document.querySelector('.dtab').classList.add('on');document.getElementById('tab-info').classList.add('on');
+  go('detail');
+}
+function tab(el,t){document.querySelectorAll('.dtab').forEach(d=>d.classList.remove('on'));document.querySelectorAll('.dc').forEach(d=>d.classList.remove('on'));el.classList.add('on');document.getElementById('tab-'+t).classList.add('on');}
+function renderCart(){const el=document.getElementById('cart-items');if(!cart.length){el.innerHTML='<div style="text-align:center;padding:2rem;color:rgba(255,255,255,.3);font-size:13px">ยังไม่มีสินค้า</div>';document.getElementById('ctotal').textContent='฿ 0';return;}el.innerHTML=cart.map((p,i)=>`<div class="ci"><div class="ci-l"><div class="ci-ico">${p.icon}</div><div><div class="ci-name">${p.en}</div><div class="ci-cat">${p.th}</div></div></div><div style="display:flex;align-items:center"><div class="ci-price">฿${p.price}</div><button class="rm-btn" onclick="rmCart(${i})">×</button></div></div>`).join('');calcTotal();}
+function calcTotal(){const sub=cart.reduce((s,p)=>s+p.price,0),fin=Math.max(0,sub-disc);if(disc>0){document.getElementById('dline').style.display='flex';document.getElementById('dval').textContent='-'+discLabel;}document.getElementById('ctotal').textContent='฿ '+fin.toLocaleString();}
+function applyCoupon(){const code=document.getElementById('ci2').value.trim().toUpperCase(),msg=document.getElementById('cm');const coupons={RBX10:{type:'pct',val:10},VIP50:{type:'flat',val:50},NEWBIE:{type:'flat',val:30}};if(coupons[code]){const c=coupons[code],sub=cart.reduce((s,p)=>s+p.price,0);disc=c.type==='pct'?Math.round(sub*c.val/100):c.val;discLabel=c.type==='pct'?`${c.val}% = ฿${disc}`:`฿${c.val}`;msg.className='coup-msg coup-ok';msg.textContent='ใช้โค้ดสำเร็จ! ลด '+discLabel;calcTotal();}else{disc=0;discLabel='';document.getElementById('dline').style.display='none';msg.className='coup-msg coup-err';msg.textContent='โค้ดไม่ถูกต้อง';calcTotal();}}
+function renderCheckout(){const sub=cart.reduce((s,p)=>s+p.price,0),fin=Math.max(0,sub-disc);document.getElementById('payamt').textContent='฿ '+fin.toLocaleString()+' บาท';document.getElementById('aichk').classList.remove('show');document.getElementById('rok').style.display='none';document.getElementById('rfail').style.display='none';document.getElementById('dllist').style.display='none';document.getElementById('st-chk').classList.remove('active','done');document.getElementById('st-done').classList.remove('active','done');document.getElementById('st-pay').classList.add('active');}
+function simUpload(){document.getElementById('aichk').classList.add('show');document.getElementById('rok').style.display='none';document.getElementById('rfail').style.display='none';document.getElementById('dllist').style.display='none';document.getElementById('st-pay').classList.remove('active');document.getElementById('st-chk').classList.add('active');setTimeout(()=>{document.getElementById('aichk').classList.remove('show');document.getElementById('st-chk').classList.remove('active');const ok=Math.random()>.15;if(ok){document.getElementById('st-chk').classList.add('done');document.getElementById('st-done').classList.add('active');document.getElementById('rok').classList.add('show');document.getElementById('rok').style.display='block';document.getElementById('dllist').style.display='block';document.getElementById('dlitems').innerHTML=cart.map(p=>`<div class="dl-item"><div class="dl-name">${p.icon} ${p.en}</div><button class="dl-btn">ดาวน์โหลด</button></div>`).join('');}else{document.getElementById('rfail').classList.add('show');document.getElementById('rfail').style.display='block';}},2500);}
+
+/* ===== ตั้งค่าชื่อและไอคอนร้านตรงนี้เลย ===== */
+const SITE_NAME = 'RBX Market';  // เปลี่ยนชื่อร้านได้ตรงนี้
+const SITE_ICON = '🎮';          // เปลี่ยน emoji ไอคอนได้เลย
+/* ============================================= */
+document.getElementById('site-name').textContent = SITE_NAME;
+document.title = SITE_NAME;
+const _ico = document.getElementById('site-icon');
+_ico.innerHTML = '';
+_ico.style.cssText += ';font-size:18px;display:flex;align-items:center;justify-content:center';
+_ico.textContent = SITE_ICON;
+
+renderGrid();
+</script>
