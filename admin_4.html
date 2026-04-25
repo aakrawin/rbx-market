@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin — RBX Market</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;font-family:sans-serif}
+body{background:#0a0a16;color:#fff;min-height:100vh}
+:root{--c1:#00d4ff;--card:#111127;--border:rgba(255,255,255,0.08)}
+
+/* LOGIN */
+.login-wrap{display:flex;align-items:center;justify-content:center;min-height:100vh}
+.login-card{background:#111127;border:0.5px solid rgba(255,255,255,.1);border-radius:16px;padding:2rem;width:360px}
+.login-title{font-size:20px;font-weight:500;margin-bottom:4px}
+.login-sub{font-size:12px;color:rgba(255,255,255,.4);margin-bottom:1.5rem}
+.field{margin-bottom:.75rem}
+.field label{font-size:11px;color:rgba(255,255,255,.4);display:block;margin-bottom:5px}
+.field input{width:100%;padding:9px 12px;border:0.5px solid rgba(255,255,255,.12);border-radius:8px;background:rgba(255,255,255,.05);color:#fff;font-size:13px}
+.btn-login{width:100%;padding:10px;background:var(--c1);color:#080812;border:none;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;margin-top:8px}
+.err{color:#ff4455;font-size:12px;margin-top:8px;display:none}
+
+/* ADMIN LAYOUT */
+.admin{display:none;min-height:100vh}
+.sidebar{width:200px;background:#080812;border-right:0.5px solid var(--border);position:fixed;top:0;left:0;height:100vh;padding:16px 8px}
+.sb-logo{padding:8px;margin-bottom:16px;border-bottom:0.5px solid var(--border);padding-bottom:16px}
+.sb-logo-t{font-size:14px;font-weight:500}
+.sb-logo-badge{display:inline-block;background:rgba(255,79,79,.15);border:0.5px solid rgba(255,79,79,.3);border-radius:4px;padding:1px 6px;font-size:9px;color:#ff4f4f;margin-top:4px}
+.sb-item{display:flex;align-items:center;gap:8px;padding:7px 8px;border-radius:7px;cursor:pointer;font-size:12px;color:rgba(255,255,255,.5);margin-bottom:1px}
+.sb-item:hover{background:rgba(255,255,255,.05);color:#fff}
+.sb-item.on{background:rgba(0,212,255,.1);color:var(--c1)}
+.main{margin-left:200px;padding:1.25rem}
+.topbar{background:#080812;border-bottom:0.5px solid var(--border);height:50px;display:flex;align-items:center;justify-content:space-between;padding:0 1.25rem;position:fixed;top:0;left:200px;right:0;z-index:10}
+.topbar-title{font-size:14px;font-weight:500}
+.main-content{margin-top:50px;padding:1.25rem}
+.logout-btn{padding:5px 12px;border-radius:20px;border:0.5px solid rgba(255,255,255,.15);background:transparent;color:rgba(255,255,255,.6);font-size:12px;cursor:pointer}
+
+.page{display:none}.page.active{display:block}
+.slabel{font-size:10px;font-weight:500;color:rgba(255,255,255,.35);text-transform:uppercase;letter-spacing:1px;margin-bottom:.75rem}
+
+/* STAT CARDS */
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:1.25rem}
+.stat-card{background:var(--card);border:0.5px solid var(--border);border-radius:12px;padding:14px 16px}
+.stat-label{font-size:11px;color:rgba(255,255,255,.4);margin-bottom:5px}
+.stat-val{font-size:22px;font-weight:500;color:#fff;margin-bottom:3px}
+.stat-sub{font-size:10px;color:#27a85f}
+
+/* TABLE */
+.table-card{background:var(--card);border:0.5px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:1rem}
+.table-hd{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:0.5px solid var(--border)}
+.table-title{font-size:13px;font-weight:500}
+.t-row{display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr;gap:8px;padding:10px 16px;border-bottom:0.5px solid var(--border);align-items:center;font-size:12px}
+.t-row:last-child{border-bottom:none}
+.t-row.head{background:rgba(255,255,255,.03);font-size:10px;color:rgba(255,255,255,.35);text-transform:uppercase;letter-spacing:.5px}
+.t-name{font-weight:500;color:#fff}
+.t-sub{font-size:10px;color:rgba(255,255,255,.35)}
+.badge{display:inline-flex;padding:2px 8px;border-radius:50px;font-size:10px;font-weight:500}
+.b-wait{background:rgba(239,159,39,.12);color:#EF9F27;border:0.5px solid rgba(239,159,39,.25)}
+.b-ok{background:rgba(39,168,95,.12);color:#27a85f;border:0.5px solid rgba(39,168,95,.25)}
+.b-fail{background:rgba(255,68,85,.12);color:#ff4455;border:0.5px solid rgba(255,68,85,.25)}
+.btn-sm{padding:3px 10px;border-radius:50px;font-size:10px;cursor:pointer}
+.btn-approve{border:none;background:#27a85f;color:#fff}
+.btn-reject{border:0.5px solid rgba(255,68,85,.3);background:transparent;color:#ff4455}
+.btn-view{border:0.5px solid rgba(0,212,255,.3);background:rgba(0,212,255,.06);color:var(--c1)}
+.btn-edit{border:0.5px solid rgba(255,255,255,.15);background:transparent;color:rgba(255,255,255,.6)}
+.btn-del{border:0.5px solid rgba(255,68,85,.25);background:transparent;color:#ff4455;margin-left:4px}
+
+/* PRODUCT FORM */
+.form-card{background:var(--card);border:0.5px solid var(--border);border-radius:12px;padding:16px;margin-bottom:1rem}
+.form-title{font-size:13px;font-weight:500;margin-bottom:1rem}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+.fg-full{grid-column:1/-1}
+.fg{display:flex;flex-direction:column;gap:5px}
+.fl{font-size:11px;color:rgba(255,255,255,.4)}
+.fi{padding:8px 12px;border:0.5px solid rgba(255,255,255,.12);border-radius:8px;background:rgba(255,255,255,.05);color:#fff;font-size:13px;width:100%}
+.fi::placeholder{color:rgba(255,255,255,.2)}
+.fselect{padding:8px 12px;border:0.5px solid rgba(255,255,255,.12);border-radius:8px;background:#0e0e1c;color:#fff;font-size:13px;width:100%}
+.fta{padding:8px 12px;border:0.5px solid rgba(255,255,255,.12);border-radius:8px;background:rgba(255,255,255,.05);color:#fff;font-size:13px;width:100%;min-height:80px;resize:vertical}
+.btn-save{padding:9px 24px;background:var(--c1);color:#080812;border:none;border-radius:50px;font-size:13px;font-weight:500;cursor:pointer}
+.btn-cancel{padding:9px 20px;background:transparent;color:rgba(255,255,255,.5);border:0.5px solid rgba(255,255,255,.15);border-radius:50px;font-size:13px;cursor:pointer;margin-right:8px}
+
+/* TOAST */
+.toast{position:fixed;top:16px;right:16px;background:#111127;border:0.5px solid rgba(39,168,95,.4);border-radius:10px;padding:10px 14px;font-size:12px;color:#27a85f;z-index:999;transform:translateX(120%);transition:transform .3s}
+.toast.show{transform:translateX(0)}
+.toast.err{border-color:rgba(255,68,85,.4);color:#ff4455}
+
+/* SETTINGS */
+.settings-card{background:var(--card);border:0.5px solid var(--border);border-radius:12px;padding:16px;margin-bottom:1rem;max-width:560px}
+</style>
+</head>
+<body>
+<div class="toast" id="toast"></div>
+
+<!-- LOGIN -->
+<div class="login-wrap" id="login-wrap">
+  <div class="login-card">
+    <div class="login-title">🔐 Admin Login</div>
+    <div class="login-sub">สำหรับเจ้าของร้านเท่านั้น</div>
+    <div class="field"><label>Email</label><input type="email" id="email" placeholder="admin@email.com"></div>
+    <div class="field"><label>Password</label><input type="password" id="password" placeholder="••••••••"></div>
+    <button class="btn-login" onclick="doLogin()">เข้าสู่ระบบ</button>
+    <div class="err" id="err">อีเมลหรือรหัสผ่านไม่ถูกต้อง</div>
+  </div>
+</div>
+
+<!-- ADMIN -->
+<div class="admin" id="admin">
+  <div class="sidebar">
+    <div class="sb-logo">
+      <div class="sb-logo-t">RBX Market</div>
+      <div class="sb-logo-badge">ADMIN</div>
+    </div>
+    <div class="sb-item on" onclick="goPage('dashboard',this)">📊 Dashboard</div>
+    <div class="sb-item" onclick="goPage('orders',this)">🛒 ออเดอร์ <span id="pending-count" style="margin-left:auto;background:#ff4455;color:#fff;border-radius:50px;padding:1px 6px;font-size:9px"></span></div>
+    <div class="sb-item" onclick="goPage('products',this)">📦 สินค้า</div>
+    <div class="sb-item" onclick="goPage('addproduct',this)">➕ เพิ่มสินค้า</div>
+    <div class="sb-item" onclick="goPage('settings',this)">⚙️ ตั้งค่า</div>
+  </div>
+  <div class="main">
+    <div class="topbar">
+      <div class="topbar-title" id="topbar-title">Dashboard</div>
+      <button class="logout-btn" onclick="doLogout()">ออกจากระบบ</button>
+    </div>
+    <div class="main-content">
+
+      <!-- DASHBOARD -->
+      <div id="page-dashboard" class="page active">
+        <div class="stats-row">
+          <div class="stat-card"><div class="stat-label">รายได้เดือนนี้</div><div class="stat-val" id="s-revenue">฿0</div><div class="stat-sub">จากออเดอร์ที่อนุมัติ</div></div>
+          <div class="stat-card"><div class="stat-label">ออเดอร์ทั้งหมด</div><div class="stat-val" id="s-orders">0</div><div class="stat-sub">ทุกสถานะ</div></div>
+          <div class="stat-card"><div class="stat-label">รอตรวจสลิป</div><div class="stat-val" id="s-pending" style="color:#EF9F27">0</div><div class="stat-sub" style="color:#EF9F27">ต้องดำเนินการ</div></div>
+          <div class="stat-card"><div class="stat-label">สินค้าทั้งหมด</div><div class="stat-val" id="s-products">0</div><div class="stat-sub">ในระบบ</div></div>
+        </div>
+        <div class="table-card">
+          <div class="table-hd"><div class="table-title">ออเดอร์ล่าสุด</div></div>
+          <div class="t-row head"><div>ลูกค้า</div><div>สินค้า</div><div>ยอด</div><div>สถานะ</div><div>จัดการ</div></div>
+          <div id="recent-orders"></div>
+        </div>
+      </div>
+
+      <!-- ORDERS -->
+      <div id="page-orders" class="page">
+        <div class="table-card">
+          <div class="table-hd"><div class="table-title">ออเดอร์ทั้งหมด</div></div>
+          <div class="t-row head"><div>ลูกค้า</div><div>สินค้า</div><div>ยอด</div><div>สถานะ</div><div>จัดการ</div></div>
+          <div id="all-orders"></div>
+        </div>
+      </div>
+
+      <!-- PRODUCTS -->
+      <div id="page-products" class="page">
+        <div class="table-card">
+          <div class="table-hd">
+            <div class="table-title">สินค้าทั้งหมด</div>
+            <button class="btn-sm btn-approve" onclick="goPage('addproduct',document.querySelectorAll('.sb-item')[3])">+ เพิ่มสินค้า</button>
+          </div>
+          <div class="t-row head"><div>ชื่อสินค้า</div><div>หมวด</div><div>ราคา</div><div>ขายแล้ว</div><div>จัดการ</div></div>
+          <div id="products-list"></div>
+        </div>
+      </div>
+
+      <!-- ADD PRODUCT -->
+      <div id="page-addproduct" class="page">
+        <div class="form-card">
+          <div class="form-title">เพิ่ม / แก้ไขสินค้า</div>
+          <input type="hidden" id="edit-id">
+          <div class="form-grid">
+            <div class="fg fg-full"><div class="fl">ชื่อสินค้า (EN)</div><input class="fi" id="p-name-en" placeholder="Admin Command System Pro"></div>
+            <div class="fg fg-full"><div class="fl">ชื่อสินค้า (ไทย)</div><input class="fi" id="p-name-th" placeholder="ระบบคำสั่ง Admin ขั้นสูง"></div>
+            <div class="fg"><div class="fl">หมวดหมู่</div>
+              <select class="fselect" id="p-cat">
+                <option value="script">Script</option>
+                <option value="3dmodel">3D Model</option>
+                <option value="animation">Animation</option>
+                <option value="vfx">VFX</option>
+                <option value="ui">UI</option>
+                <option value="icon">Icon Pack</option>
+                <option value="free">Free</option>
+              </select>
+            </div>
+            <div class="fg"><div class="fl">ราคา (บาท) — 0 = ฟรี</div><input class="fi" id="p-price" type="number" placeholder="299"></div>
+            <div class="fg"><div class="fl">Badge</div>
+              <select class="fselect" id="p-badge">
+                <option value="">ไม่มี</option>
+                <option value="new">NEW</option>
+                <option value="hot">HOT</option>
+                <option value="free">FREE</option>
+              </select>
+            </div>
+            <div class="fg"><div class="fl">เวอร์ชัน</div><input class="fi" id="p-version" placeholder="v1.0.0"></div>
+            <div class="fg fg-full"><div class="fl">รายละเอียด</div><textarea class="fta" id="p-desc" placeholder="รายละเอียดสินค้า features ต่างๆ..."></textarea></div>
+            <div class="fg fg-full"><div class="fl">วิธีใช้</div><textarea class="fta" id="p-howto" placeholder="1. ดาวน์โหลดไฟล์..."></textarea></div>
+            <div class="fg fg-full"><div class="fl">ลิงก์คลิปสอน YouTube</div><input class="fi" id="p-tutorial" placeholder="https://youtube.com/watch?v=..."></div>
+            <div class="fg fg-full"><div class="fl">FAQ (Q: คำถาม A: คำตอบ แต่ละข้อขึ้นบรรทัดใหม่)</div><textarea class="fta" id="p-faq" placeholder="Q: ใช้ได้กี่เกม?&#10;A: ใช้ได้ไม่จำกัด"></textarea></div>
+          </div>
+          <div style="display:flex;justify-content:flex-end;gap:8px">
+            <button class="btn-cancel" onclick="resetForm()">ยกเลิก</button>
+            <button class="btn-save" onclick="saveProduct()">บันทึกสินค้า</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- SETTINGS -->
+      <div id="page-settings" class="page">
+
+        <!-- HERO & BANNER -->
+        <div class="settings-card" style="max-width:700px">
+          <div class="form-title">🎨 แก้ข้อความหน้าร้าน (Hero & Banner)</div>
+          <div style="font-size:11px;color:rgba(255,255,255,.35);margin-bottom:1rem">ข้อความที่แก้ตรงนี้จะอัปเดตหน้าร้านอัตโนมัติครับ</div>
+          <div class="form-grid" style="grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+            <div class="fg fg-full">
+              <div class="fl">ชื่อร้าน (แสดงบน navbar)</div>
+              <input class="fi" id="st-site-name" placeholder="RBX Market">
+            </div>
+            <div class="fg fg-full">
+              <div class="fl">ไอคอนร้าน (emoji)</div>
+              <input class="fi" id="st-site-icon" placeholder="🎮" style="font-size:20px">
+            </div>
+            <div class="fg fg-full">
+              <div class="fl">Hero — Badge ด้านบน (เช่น "48 assets พร้อมขาย")</div>
+              <input class="fi" id="st-hero-badge" placeholder="48 assets พร้อมขาย">
+            </div>
+            <div class="fg fg-full">
+              <div class="fl">Hero — หัวข้อหลัก บรรทัด 1</div>
+              <input class="fi" id="st-hero-title1" placeholder="Roblox Assets">
+            </div>
+            <div class="fg fg-full">
+              <div class="fl">Hero — หัวข้อหลัก บรรทัด 2 (ตัวสี)</div>
+              <input class="fi" id="st-hero-title2" placeholder="คุณภาพจริง ราคาย่อมเยา">
+            </div>
+            <div class="fg fg-full">
+              <div class="fl">Hero — คำอธิบายใต้หัวข้อ</div>
+              <input class="fi" id="st-hero-sub" placeholder="Script · 3D Model · Animation · VFX · UI · Icon ครบจบที่เดียว">
+            </div>
+            <div class="fg">
+              <div class="fl">Hero — ตัวเลข stat 1 (เช่น 48+)</div>
+              <input class="fi" id="st-stat1-n" placeholder="48+">
+              <input class="fi" id="st-stat1-l" placeholder="Assets" style="margin-top:5px">
+            </div>
+            <div class="fg">
+              <div class="fl">Hero — ตัวเลข stat 2</div>
+              <input class="fi" id="st-stat2-n" placeholder="1.2K+">
+              <input class="fi" id="st-stat2-l" placeholder="ดาวน์โหลด" style="margin-top:5px">
+            </div>
+            <div class="fg">
+              <div class="fl">Hero — ตัวเลข stat 3</div>
+              <input class="fi" id="st-stat3-n" placeholder="4.8">
+              <input class="fi" id="st-stat3-l" placeholder="คะแนนเฉลี่ย" style="margin-top:5px">
+            </div>
+            <div class="fg">
+              <div class="fl">Hero — ตัวเลข stat 4</div>
+              <input class="fi" id="st-stat4-n" placeholder="250+">
+              <input class="fi" id="st-stat4-l" placeholder="ลูกค้า" style="margin-top:5px">
+            </div>
+          </div>
+
+          <!-- PREVIEW -->
+          <div style="background:#080812;border-radius:10px;padding:14px 16px;margin-bottom:12px">
+            <div style="font-size:10px;color:rgba(255,255,255,.35);margin-bottom:8px;text-transform:uppercase;letter-spacing:1px">Preview</div>
+            <div style="display:inline-flex;align-items:center;gap:5px;background:rgba(0,212,255,.1);border:0.5px solid rgba(0,212,255,.25);border-radius:20px;padding:3px 11px;font-size:11px;color:#00d4ff;margin-bottom:8px">
+              ● <span id="prev-badge">48 assets พร้อมขาย</span>
+            </div>
+            <div style="font-size:20px;font-weight:500;color:#fff;margin-bottom:4px">
+              <span id="prev-t1">Roblox Assets</span>
+            </div>
+            <div style="font-size:16px;background:linear-gradient(90deg,#00d4ff,#7b5ef8);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:4px">
+              <span id="prev-t2">คุณภาพจริง ราคาย่อมเยา</span>
+            </div>
+            <div style="font-size:12px;color:rgba(255,255,255,.4)"><span id="prev-sub">Script · 3D Model · Animation · VFX · UI · Icon ครบจบที่เดียว</span></div>
+          </div>
+
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:.75rem">
+            <div style="font-size:11px;color:rgba(255,255,255,.35)">บันทึกแล้วไปแก้ index.html ใน GitHub ด้วยนะครับ</div>
+            <button class="btn-save" onclick="saveHeroSettings()">บันทึก Hero & Banner</button>
+          </div>
+        </div>
+
+        <!-- ร้านค้า -->
+        <div class="settings-card">
+          <div class="form-title">🏪 ตั้งค่าร้านค้า</div>
+          <div class="fg" style="margin-bottom:.75rem"><div class="fl">ชื่อร้านค้า</div><input class="fi" id="st-name" value="RBX Market"></div>
+          <div class="fg" style="margin-bottom:.75rem"><div class="fl">ชื่อบัญชีกรุงไทย</div><input class="fi" id="st-bank-name" placeholder="นาย ตัวอย่าง ร้านค้า"></div>
+          <div class="fg" style="margin-bottom:.75rem"><div class="fl">เลขบัญชีกรุงไทย</div><input class="fi" id="st-bank-no" placeholder="123-4-56789-0"></div>
+          <div class="fg" style="margin-bottom:.75rem"><div class="fl">Facebook Page URL</div><input class="fi" id="st-fb" placeholder="https://facebook.com/..."></div>
+          <div style="display:flex;justify-content:flex-end;margin-top:.75rem">
+            <button class="btn-save" onclick="saveShopSettings()">บันทึกการตั้งค่า</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://qjkpkgcgyqmcvluodzfy.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFqa3BrZ2NneXFtY3ZsdW9kemZ5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzcxMjMwMTcsImV4cCI6MjA5MjY5OTAxN30.q2dsV9wKe_cu6rX--I95AR0dHxx4m-ZkRyTu-1qd0XM';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+async function doLogin(){
+  const email = document.getElementById('email').value;
+  const pass = document.getElementById('password').value;
+  const {data,error} = await sb.auth.signInWithPassword({email,password:pass});
+  if(error){document.getElementById('err').style.display='block';return;}
+  document.getElementById('login-wrap').style.display='none';
+  document.getElementById('admin').style.display='block';
+  loadDashboard();
+}
+
+async function doLogout(){
+  await sb.auth.signOut();
+  document.getElementById('login-wrap').style.display='flex';
+  document.getElementById('admin').style.display='none';
+}
+
+function goPage(p,el){
+  document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
+  document.getElementById('page-'+p).classList.add('active');
+  document.querySelectorAll('.sb-item').forEach(x=>x.classList.remove('on'));
+  if(el)el.classList.add('on');
+  const t={dashboard:'Dashboard',orders:'ออเดอร์',products:'สินค้า',addproduct:'เพิ่มสินค้า',settings:'ตั้งค่าร้าน'};
+  document.getElementById('topbar-title').textContent=t[p]||p;
+  if(p==='orders')loadOrders();
+  if(p==='products')loadProducts();
+  if(p==='settings')loadHeroSettings();
+}
+
+async function loadDashboard(){
+  const {data:orders} = await sb.from('orders').select('*');
+  const {data:products} = await sb.from('products').select('*');
+  const approved = (orders||[]).filter(o=>o.status==='approved');
+  const pending = (orders||[]).filter(o=>o.status==='pending');
+  const revenue = approved.reduce((s,o)=>s+o.total_amount,0);
+  document.getElementById('s-revenue').textContent='฿'+revenue.toLocaleString();
+  document.getElementById('s-orders').textContent=(orders||[]).length;
+  document.getElementById('s-pending').textContent=pending.length;
+  document.getElementById('s-products').textContent=(products||[]).length;
+  document.getElementById('pending-count').textContent=pending.length||'';
+  const recent = (orders||[]).slice(0,5);
+  document.getElementById('recent-orders').innerHTML = recent.length
+    ? recent.map(o=>orderRow(o)).join('')
+    : '<div style="padding:1rem;text-align:center;color:rgba(255,255,255,.3);font-size:12px">ยังไม่มีออเดอร์</div>';
+}
+
+async function loadOrders(){
+  const {data:orders} = await sb.from('orders').select('*').order('created_at',{ascending:false});
+  document.getElementById('all-orders').innerHTML = (orders||[]).length
+    ? (orders||[]).map(o=>orderRow(o)).join('')
+    : '<div style="padding:1rem;text-align:center;color:rgba(255,255,255,.3);font-size:12px">ยังไม่มีออเดอร์</div>';
+}
+
+function orderRow(o){
+  const date = new Date(o.created_at).toLocaleDateString('th-TH',{day:'numeric',month:'short'});
+  const badge = o.status==='pending'?'<span class="badge b-wait">รอตรวจสลิป</span>'
+    :o.status==='approved'?'<span class="badge b-ok">อนุมัติแล้ว</span>'
+    :'<span class="badge b-fail">ปฏิเสธ</span>';
+  const actions = o.status==='pending'
+    ? `<button class="btn-sm btn-approve" onclick="updateOrder('${o.id}','approved')">อนุมัติ</button>
+       <button class="btn-sm btn-reject" onclick="updateOrder('${o.id}','rejected')" style="margin-left:4px">ปฏิเสธ</button>`
+    : '<span style="color:rgba(255,255,255,.3);font-size:11px">เสร็จสิ้น</span>';
+  return`<div class="t-row">
+    <div><div class="t-name">${o.user_name||o.user_email}</div><div class="t-sub">${date}</div></div>
+    <div style="color:rgba(255,255,255,.6);font-size:11px">${(o.product_ids||[]).length} รายการ</div>
+    <div style="font-weight:500">฿${o.total_amount}</div>
+    <div>${badge}</div>
+    <div>${actions}</div>
+  </div>`;
+}
+
+async function updateOrder(id,status){
+  await sb.from('orders').update({status}).eq('id',id);
+  showToast(status==='approved'?'อนุมัติแล้ว ✅':'ปฏิเสธแล้ว');
+  loadOrders();loadDashboard();
+}
+
+async function loadProducts(){
+  const {data:products} = await sb.from('products').select('*').order('created_at',{ascending:false});
+  document.getElementById('products-list').innerHTML = (products||[]).length
+    ? (products||[]).map(p=>`<div class="t-row">
+        <div><div class="t-name">${p.name_en}</div><div class="t-sub">${p.name_th||''}</div></div>
+        <div style="color:rgba(255,255,255,.5)">${p.category}</div>
+        <div style="font-weight:500">${p.price===0?'ฟรี':'฿'+p.price}</div>
+        <div style="color:rgba(255,255,255,.5)">${p.sold||0} ชิ้น</div>
+        <div><button class="btn-sm btn-edit" onclick="editProduct(${JSON.stringify(p).replace(/"/g,'&quot;')})">แก้ไข</button>
+        <button class="btn-sm btn-del" onclick="deleteProduct('${p.id}')">ลบ</button></div>
+      </div>`).join('')
+    : '<div style="padding:1rem;text-align:center;color:rgba(255,255,255,.3);font-size:12px">ยังไม่มีสินค้า — กด "เพิ่มสินค้า"</div>';
+}
+
+function editProduct(p){
+  document.getElementById('edit-id').value=p.id;
+  document.getElementById('p-name-en').value=p.name_en||'';
+  document.getElementById('p-name-th').value=p.name_th||'';
+  document.getElementById('p-cat').value=p.category||'script';
+  document.getElementById('p-price').value=p.price||0;
+  document.getElementById('p-badge').value=p.badge||'';
+  document.getElementById('p-version').value=p.version||'v1.0.0';
+  document.getElementById('p-desc').value=p.description||'';
+  document.getElementById('p-howto').value=p.howto||'';
+  document.getElementById('p-tutorial').value=p.tutorial_url||'';
+  document.getElementById('p-faq').value=p.faq||'';
+  goPage('addproduct',document.querySelectorAll('.sb-item')[3]);
+}
+
+function resetForm(){
+  document.getElementById('edit-id').value='';
+  ['p-name-en','p-name-th','p-price','p-desc','p-howto','p-tutorial','p-faq'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('p-badge').value='';
+  document.getElementById('p-version').value='v1.0.0';
+}
+
+async function saveProduct(){
+  const id=document.getElementById('edit-id').value;
+  const data={
+    name_en:document.getElementById('p-name-en').value,
+    name_th:document.getElementById('p-name-th').value,
+    category:document.getElementById('p-cat').value,
+    price:parseInt(document.getElementById('p-price').value)||0,
+    badge:document.getElementById('p-badge').value,
+    version:document.getElementById('p-version').value||'v1.0.0',
+    description:document.getElementById('p-desc').value,
+    howto:document.getElementById('p-howto').value,
+    tutorial_url:document.getElementById('p-tutorial').value,
+    faq:document.getElementById('p-faq').value,
+    is_active:true,
+  };
+  if(!data.name_en){showToast('กรุณาใส่ชื่อสินค้า','err');return;}
+  let error;
+  if(id){({error}=await sb.from('products').update(data).eq('id',id));}
+  else{({error}=await sb.from('products').insert(data));}
+  if(error){showToast('เกิดข้อผิดพลาด: '+error.message,'err');return;}
+  showToast(id?'แก้ไขสินค้าแล้ว ✅':'เพิ่มสินค้าแล้ว ✅');
+  resetForm();
+  goPage('products',document.querySelectorAll('.sb-item')[2]);
+}
+
+async function deleteProduct(id){
+  if(!confirm('ยืนยันลบสินค้านี้?'))return;
+  await sb.from('products').delete().eq('id',id);
+  showToast('ลบสินค้าแล้ว');
+  loadProducts();
+}
+
+function saveHeroSettings(){
+  const cfg={
+    siteName: document.getElementById('st-site-name').value||'RBX Market',
+    siteIcon: document.getElementById('st-site-icon').value||'🎮',
+    heroBadge: document.getElementById('st-hero-badge').value||'48 assets พร้อมขาย',
+    heroTitle1: document.getElementById('st-hero-title1').value||'Roblox Assets',
+    heroTitle2: document.getElementById('st-hero-title2').value||'คุณภาพจริง ราคาย่อมเยา',
+    heroSub: document.getElementById('st-hero-sub').value||'Script · 3D Model · Animation · VFX · UI · Icon ครบจบที่เดียว',
+    stat1n: document.getElementById('st-stat1-n').value||'48+',
+    stat1l: document.getElementById('st-stat1-l').value||'Assets',
+    stat2n: document.getElementById('st-stat2-n').value||'1.2K+',
+    stat2l: document.getElementById('st-stat2-l').value||'ดาวน์โหลด',
+    stat3n: document.getElementById('st-stat3-n').value||'4.8',
+    stat3l: document.getElementById('st-stat3-l').value||'คะแนนเฉลี่ย',
+    stat4n: document.getElementById('st-stat4-n').value||'250+',
+    stat4l: document.getElementById('st-stat4-l').value||'ลูกค้า',
+  };
+  localStorage.setItem('rbx_hero_cfg', JSON.stringify(cfg));
+  showToast('บันทึก Hero settings แล้ว ✅');
+  updatePreview();
+}
+
+function saveShopSettings(){
+  const cfg={
+    shopName: document.getElementById('st-name').value,
+    bankName: document.getElementById('st-bank-name').value,
+    bankNo: document.getElementById('st-bank-no').value,
+    fbUrl: document.getElementById('st-fb').value,
+  };
+  localStorage.setItem('rbx_shop_cfg', JSON.stringify(cfg));
+  showToast('บันทึกการตั้งค่าแล้ว ✅');
+}
+
+function updatePreview(){
+  const badge = document.getElementById('st-hero-badge').value||'48 assets พร้อมขาย';
+  const t1 = document.getElementById('st-hero-title1').value||'Roblox Assets';
+  const t2 = document.getElementById('st-hero-title2').value||'คุณภาพจริง ราคาย่อมเยา';
+  const sub = document.getElementById('st-hero-sub').value||'Script · 3D Model · Animation · VFX · UI · Icon ครบจบที่เดียว';
+  if(document.getElementById('prev-badge'))document.getElementById('prev-badge').textContent=badge;
+  if(document.getElementById('prev-t1'))document.getElementById('prev-t1').textContent=t1;
+  if(document.getElementById('prev-t2'))document.getElementById('prev-t2').textContent=t2;
+  if(document.getElementById('prev-sub'))document.getElementById('prev-sub').textContent=sub;
+}
+
+function loadHeroSettings(){
+  const cfg = JSON.parse(localStorage.getItem('rbx_hero_cfg')||'{}');
+  const fields={
+    'st-site-name':'siteName','st-site-icon':'siteIcon',
+    'st-hero-badge':'heroBadge','st-hero-title1':'heroTitle1',
+    'st-hero-title2':'heroTitle2','st-hero-sub':'heroSub',
+    'st-stat1-n':'stat1n','st-stat1-l':'stat1l',
+    'st-stat2-n':'stat2n','st-stat2-l':'stat2l',
+    'st-stat3-n':'stat3n','st-stat3-l':'stat3l',
+    'st-stat4-n':'stat4n','st-stat4-l':'stat4l',
+  };
+  Object.entries(fields).forEach(([id,key])=>{
+    const el=document.getElementById(id);
+    if(el&&cfg[key])el.value=cfg[key];
+  });
+  updatePreview();
+  // live preview
+  ['st-hero-badge','st-hero-title1','st-hero-title2','st-hero-sub'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el)el.addEventListener('input',updatePreview);
+  });
+}
+
+function showToast(msg,type=''){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.className='toast show'+(type?' '+type:'');
+  setTimeout(()=>t.classList.remove('show'),2500);
+}
+
+
+// Check session on load
+sb.auth.getSession().then(({data})=>{
+  if(data.session){
+    document.getElementById('login-wrap').style.display='none';
+    document.getElementById('admin').style.display='block';
+    loadDashboard();
+  }
+});
+</script>
+</body>
+</html>

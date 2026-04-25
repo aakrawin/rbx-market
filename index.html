@@ -1,3 +1,4 @@
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-font-smoothing:antialiased}
@@ -439,11 +440,6 @@ body{font-family:var(--font-sans)}
 </div>
 
 <script>
-const SUPABASE_URL = "https://qjkpkgcgyqmcvluodzfy.supabase.co";
-const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFqa3BrZ2NneXFtY3ZsdW9kemZ5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzcxMjMwMTcsImV4cCI6MjA5MjY5OTAxN30.q2dsV9wKe_cu6rX--I95AR0dHxx4m-ZkRyTu-1qd0XM";
-</script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script>
 const P=[
   {id:0,cat:'script',icon:'🖥️',bg:'#1a1a2e',en:'Admin Command System Pro',th:'ระบบคำสั่ง Admin ขั้นสูง',price:299,sold:342,badge:'hot',info:'รองรับผู้เล่น 100 คน · permission 5 ระดับ · GUI built-in · อัปเดตฟรีตลอดชีพ'},
   {id:1,cat:'3dmodel',icon:'🏰',bg:'#16213e',en:'Medieval Castle Pack',th:'แพ็ค 3D ปราสาทยุคกลาง',price:450,sold:201,badge:'new',info:'40+ ชิ้นส่วน · texture 2K · optimized polygon · LOD support'},
@@ -537,8 +533,8 @@ function renderCheckout(){const sub=cart.reduce((s,p)=>s+p.price,0),fin=Math.max
 function simUpload(){document.getElementById('aichk').classList.add('show');document.getElementById('rok').style.display='none';document.getElementById('rfail').style.display='none';document.getElementById('dllist').style.display='none';document.getElementById('st-pay').classList.remove('active');document.getElementById('st-chk').classList.add('active');setTimeout(()=>{document.getElementById('aichk').classList.remove('show');document.getElementById('st-chk').classList.remove('active');const ok=Math.random()>.15;if(ok){document.getElementById('st-chk').classList.add('done');document.getElementById('st-done').classList.add('active');document.getElementById('rok').classList.add('show');document.getElementById('rok').style.display='block';document.getElementById('dllist').style.display='block';document.getElementById('dlitems').innerHTML=cart.map(p=>`<div class="dl-item"><div class="dl-name">${p.icon} ${p.en}</div><button class="dl-btn">ดาวน์โหลด</button></div>`).join('');}else{document.getElementById('rfail').classList.add('show');document.getElementById('rfail').style.display='block';}},2500);}
 
 /* ===== ตั้งค่าชื่อและไอคอนร้านตรงนี้เลย ===== */
-const SITE_NAME = 'RBX Market';  // เปลี่ยนชื่อร้านได้ตรงนี้
-const SITE_ICON = '🎮';          // เปลี่ยน emoji ไอคอนได้เลย
+const SITE_NAME = 'RBX Market';
+const SITE_ICON = '🎮';
 /* ============================================= */
 document.getElementById('site-name').textContent = SITE_NAME;
 document.title = SITE_NAME;
@@ -547,5 +543,162 @@ _ico.innerHTML = '';
 _ico.style.cssText += ';font-size:18px;display:flex;align-items:center;justify-content:center';
 _ico.textContent = SITE_ICON;
 
-renderGrid();
+/* ===== SUPABASE ===== */
+const _SB_URL = 'https://qjkpkgcgyqmcvluodzfy.supabase.co';
+const _SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFqa3BrZ2NneXFtY3ZsdW9kemZ5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzcxMjMwMTcsImV4cCI6MjA5MjY5OTAxN30.q2dsV9wKe_cu6rX--I95AR0dHxx4m-ZkRyTu-1qd0XM';
+const sb = window.supabase ? window.supabase.createClient(_SB_URL, _SB_KEY) : null;
+
+// STATE
+let currentUser = null;
+
+// ---- AUTH FUNCTIONS ----
+async function doRegister() {
+  const email = document.getElementById('reg-email').value.trim();
+  const pass = document.getElementById('reg-pass').value;
+  const name = document.getElementById('reg-name').value.trim();
+  if(!email||!pass||!name){showAuthErr('reg','กรุณากรอกข้อมูลให้ครบ');return;}
+  if(pass.length < 6){showAuthErr('reg','รหัสผ่านต้องมีอย่างน้อย 6 ตัว');return;}
+  const {data,error} = await sb.auth.signUp({email,password:pass,options:{data:{full_name:name}}});
+  if(error){showAuthErr('reg',error.message);return;}
+  showAuthErr('reg','สมัครสำเร็จ! ✅ กดเข้าสู่ระบบได้เลยครับ','ok');
+}
+
+async function doLogin() {
+  const email = document.getElementById('login-email').value.trim();
+  const pass = document.getElementById('login-pass').value;
+  if(!email||!pass){showAuthErr('login','กรุณากรอกอีเมลและรหัสผ่าน');return;}
+  const {data,error} = await sb.auth.signInWithPassword({email,password:pass});
+  if(error){showAuthErr('login','อีเมลหรือรหัสผ่านไม่ถูกต้อง');return;}
+  currentUser = data.user;
+  updateNavUser();
+  go('home');
+}
+
+async function doLogout() {
+  await sb.auth.signOut();
+  currentUser = null;
+  updateNavUser();
+  go('home');
+}
+
+function updateNavUser() {
+  const navR = document.querySelector('.nav-r');
+  if(currentUser) {
+    const email = currentUser.email;
+    const name = currentUser.user_metadata?.full_name || email.split('@')[0];
+    navR.innerHTML = `
+      <button class="nl" onclick="go('myassets')">My Assets</button>
+      <div class="nav-sep"></div>
+      <button class="cb" id="cart-btn" onclick="go('cart')">ตะกร้า<span class="cbadge" id="cc">0</span></button>
+      <div class="nav-sep"></div>
+      <button class="nl" onclick="go('contact')">ติดต่อ</button>
+      <button class="nl" style="color:var(--c1)">👤 ${name}</button>
+      <button class="btn-login" onclick="doLogout()">ออก</button>
+    `;
+  } else {
+    navR.innerHTML = `
+      <button class="btn-login" onclick="go('login')">เข้าสู่ระบบ</button>
+      <button class="btn-register" onclick="go('register')">สมัครสมาชิก</button>
+      <div class="nav-sep"></div>
+      <button class="nl" onclick="go('contact')">ติดต่อ</button>
+      <button class="nl" onclick="go('myassets')">My Assets</button>
+      <div class="nav-sep"></div>
+      <button class="cb" id="cart-btn" onclick="go('cart')">ตะกร้า<span class="cbadge" id="cc">0</span></button>
+    `;
+  }
+}
+
+function showAuthErr(form, msg, type='err') {
+  const el = document.getElementById(form+'-msg');
+  if(el){el.textContent=msg;el.style.color=type==='ok'?'#27a85f':'#ff4455';el.style.display='block';}
+}
+
+// ---- SUPABASE PRODUCTS ----
+async function loadProductsFromDB() {
+  if(!sb) return;
+  const {data,error} = await sb.from('products').select('*').eq('is_active',true);
+  if(error || !data || data.length===0) { renderGrid(); return; }
+  // แปลงข้อมูลจาก Supabase ให้ตรงกับ format P[]
+  const icons = {script:'🖥️','3dmodel':'🏰',animation:'🎭',vfx:'✨',ui:'🎮',icon:'🔷',free:'🎁'};
+  const bgs = {script:'#1a1a2e','3dmodel':'#16213e',animation:'#1a1228',vfx:'#0f1923',ui:'#1a0f2e',icon:'#0f1a2e',free:'#0a1a06'};
+  P.length = 0;
+  data.forEach((p,i) => {
+    P.push({
+      id: i, db_id: p.id,
+      cat: p.category,
+      icon: icons[p.category]||'📦',
+      bg: bgs[p.category]||'#111127',
+      en: p.name_en,
+      th: p.name_th||'',
+      price: p.price||0,
+      sold: p.sold||0,
+      badge: p.badge||'',
+      info: p.description||'',
+      howto: p.howto||'',
+      faq: p.faq||'',
+      tutorial_url: p.tutorial_url||'',
+      version: p.version||'v1.0.0',
+    });
+  });
+  renderGrid();
+}
+
+// ---- CHECKOUT: บันทึกออเดอร์จริง ----
+async function submitOrder(slipUrl) {
+  if(!sb||!currentUser) return;
+  const sub = cart.reduce((s,p)=>s+p.price,0);
+  const fin = Math.max(0,sub-disc);
+  const productIds = cart.map(p=>p.db_id||p.en);
+  await sb.from('orders').insert({
+    user_email: currentUser.email,
+    user_name: currentUser.user_metadata?.full_name||'',
+    product_ids: productIds,
+    total_amount: fin,
+    slip_url: slipUrl||'',
+    status: 'pending'
+  });
+}
+
+// ---- CHECK SESSION ----
+async function initAuth() {
+  if(!sb) return;
+  const {data} = await sb.auth.getSession();
+  if(data.session) {
+    currentUser = data.session.user;
+  }
+  updateNavUser();
+  await loadProductsFromDB();
+}
+
+// เพิ่ม input fields ให้หน้า login/register
+function patchAuthPages() {
+  const loginCard = document.querySelector('#page-login .auth-card');
+  if(loginCard) {
+    loginCard.innerHTML = `
+      <div class="auth-title">เข้าสู่ระบบ</div>
+      <div class="auth-sub">ยินดีต้อนรับกลับมาครับ</div>
+      <div class="field"><label>อีเมล</label><input type="email" id="login-email" class="field input" placeholder="your@email.com" style="width:100%;padding:9px 14px;border:0.5px solid rgba(255,255,255,.12);border-radius:50px;background:rgba(255,255,255,.05);color:#fff;font-size:13px"></div>
+      <div class="field"><label>รหัสผ่าน</label><input type="password" id="login-pass" class="field input" placeholder="••••••••" style="width:100%;padding:9px 14px;border:0.5px solid rgba(255,255,255,.12);border-radius:50px;background:rgba(255,255,255,.05);color:#fff;font-size:13px"></div>
+      <div id="login-msg" style="font-size:12px;margin-top:6px;display:none"></div>
+      <button class="auth-btn" onclick="doLogin()" style="margin-top:8px">เข้าสู่ระบบ →</button>
+      <div class="auth-sw">ยังไม่มีบัญชี? <span class="auth-lnk" onclick="go('register')">สมัครสมาชิก</span></div>
+    `;
+  }
+  const regCard = document.querySelector('#page-register .auth-card');
+  if(regCard) {
+    regCard.innerHTML = `
+      <div class="auth-title">สมัครสมาชิก</div>
+      <div class="auth-sub">สร้างบัญชีเพื่อซื้อและดาวน์โหลด Assets</div>
+      <div class="field"><label>ชื่อ</label><input type="text" id="reg-name" placeholder="ชื่อของคุณ" style="width:100%;padding:9px 14px;border:0.5px solid rgba(255,255,255,.12);border-radius:50px;background:rgba(255,255,255,.05);color:#fff;font-size:13px"></div>
+      <div class="field"><label>อีเมล</label><input type="email" id="reg-email" placeholder="your@email.com" style="width:100%;padding:9px 14px;border:0.5px solid rgba(255,255,255,.12);border-radius:50px;background:rgba(255,255,255,.05);color:#fff;font-size:13px"></div>
+      <div class="field"><label>รหัสผ่าน</label><input type="password" id="reg-pass" placeholder="อย่างน้อย 6 ตัว" style="width:100%;padding:9px 14px;border:0.5px solid rgba(255,255,255,.12);border-radius:50px;background:rgba(255,255,255,.05);color:#fff;font-size:13px"></div>
+      <div id="reg-msg" style="font-size:12px;margin-top:6px;display:none"></div>
+      <button class="auth-btn" onclick="doRegister()" style="margin-top:8px">สมัครสมาชิก →</button>
+      <div class="auth-sw">มีบัญชีแล้ว? <span class="auth-lnk" onclick="go('login')">เข้าสู่ระบบ</span></div>
+    `;
+  }
+}
+
+patchAuthPages();
+initAuth();
 </script>
