@@ -106,8 +106,8 @@ body{font-family:var(--font-sans)}
 .d-top{display:flex;gap:0;max-width:960px;margin:0 auto;padding:52px 1.25rem 0}
 .d-left{flex:1;min-width:0}
 .d-right{width:260px;flex-shrink:0;padding-left:1.75rem}
-.d-main-img{width:100%;aspect-ratio:16/9;border-radius:12px;overflow:hidden;position:relative;cursor:pointer;margin-bottom:.6rem}
-.d-main-bg{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:90px}
+.d-main-img{position:relative;width:100%;aspect-ratio:16/9;border-radius:12px;overflow:hidden;cursor:pointer;margin-bottom:.6rem}
+.d-main-bg{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:90px;position:absolute;inset:0}
 .d-play-ov{position:absolute;inset:0;background:rgba(8,8,18,.75);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;opacity:0;transition:opacity .2s}
 .d-main-img:hover .d-play-ov{opacity:1}.d-play-ov{cursor:pointer}
 .d-play-btn{width:54px;height:54px;border-radius:50%;background:rgba(0,212,255,.9);display:flex;align-items:center;justify-content:center}
@@ -324,8 +324,8 @@ body{font-family:var(--font-sans)}
       </div>
       <div class="d-meta-box">
         <div class="d-mr"><span class="d-ml">หมวดหมู่</span><span class="d-mv" id="d-mcat"></span></div>
-        <div class="d-mr"><span class="d-ml">รูปแบบ</span><span class="d-mv">.rbxm</span></div>
-        <div class="d-mr"><span class="d-ml">เวอร์ชัน</span><span class="d-mv">v2.1.0</span></div>
+        <div class="d-mr"><span class="d-ml">รูปแบบ</span><span class="d-mv" id="d-mfmt">.rbxm</span></div>
+        <div class="d-mr"><span class="d-ml">เวอร์ชัน</span><span class="d-mv" id="d-mver">v1.0.0</span></div>
         <div class="d-mr"><span class="d-ml">ขายไปแล้ว</span><span class="d-mv" id="d-msold"></span></div>
       </div>
     </div>
@@ -339,13 +339,8 @@ body{font-family:var(--font-sans)}
     </div>
     <div class="dc on" id="tab-info"><div class="dc-text" id="d-info-text"></div></div>
     <div class="dc" id="tab-howto"><div class="dc-text">1. ดาวน์โหลดไฟล์ .rbxm หลังชำระเงิน<br>2. เปิด Roblox Studio → Explorer<br>3. Import เข้า ServerScriptService<br>4. ปรับ config ตาม README<br>5. Playtest ได้เลยครับ<br><br>มีคลิปสอนใน My Assets ครับ</div></div>
-    <div class="dc" id="tab-changelog">
-      <div class="ver-row"><span style="color:#fff;font-weight:500">v2.1.0</span><span class="ver-tag">Latest</span></div>
-      <div style="font-size:12px;color:rgba(255,255,255,.35);padding:5px 0 10px">เพิ่ม UI ใหม่ · fix permission bug · mobile support</div>
-      <div class="ver-row"><span style="color:rgba(255,255,255,.6)">v2.0.0</span><span style="font-size:11px;color:rgba(255,255,255,.3)">15 มี.ค. 2026</span></div>
-      <div style="font-size:12px;color:rgba(255,255,255,.35);padding:5px 0 10px">Rewrite ใหม่ · DataStore v2</div>
-      <div class="ver-row"><span style="color:rgba(255,255,255,.6)">v1.0.0</span><span style="font-size:11px;color:rgba(255,255,255,.3)">1 ม.ค. 2026</span></div>
-    </div>
+    
+      </div>
     <div class="dc" id="tab-faq">
       <div class="faq-item"><div class="faq-q">ใช้ได้กี่เกม?</div><div class="faq-a">ใช้ได้ไม่จำกัด ซื้อแล้วเป็นของคุณตลอดไปครับ</div></div>
       <div class="faq-item"><div class="faq-q">มีอัปเดตฟรีไหม?</div><div class="faq-a">ทุก version ดาวน์โหลดฟรีใน My Assets ครับ</div></div>
@@ -549,6 +544,8 @@ function openDetail(id){
   document.getElementById('d-info-text').textContent=p.info||'';
   document.getElementById('d-mcat').textContent=p.cat==='3dmodel'?'3D Model':p.cat;
   document.getElementById('d-msold').textContent=(p.sold||0).toLocaleString()+' ชิ้น';
+  const verEl=document.getElementById('d-mver');if(verEl)verEl.textContent=p.version||'v1.0.0';
+  const fmtEl=document.getElementById('d-mfmt');if(fmtEl)fmtEl.textContent=p.asset_name?p.asset_name.split('.').pop()?'.'+p.asset_name.split('.').pop():'.rbxm':'.rbxm';
 
   // รูป gallery + วิดีโอ
   const imgs = (p.images && p.images.length) ? p.images : (p.image_url ? [p.image_url] : []);
@@ -573,14 +570,21 @@ function openDetail(id){
     // มีรูป/วิดีโอ - แสดงอันแรก
     switchDetailMedia(thumbItems[0]);
     document.getElementById('d-play-ov').style.display = hasVideo && thumbItems[0].type==='img' ? 'none' : '';
-    document.getElementById('d-gal').innerHTML = thumbItems.map((item,i)=>{
-      if(item.type==='img'){
-        return `<div class="d-thumb${i===0?' on':''}" onclick="switchDetailMedia({type:'img',src:'${item.src}'},this)"><div class="d-thumb-inner" style="background:#000;background-image:url('${item.src}');background-size:cover;background-position:center"></div></div>`;
-      } else {
-        const isYT = item.src.includes('youtube') || item.src.includes('youtu.be');
-        return `<div class="d-thumb${imgs.length===0?' on':''}" onclick="switchDetailMedia({type:'video',src:'${item.src}'},this)"><div class="d-thumb-inner" style="background:#111127;display:flex;align-items:center;justify-content:center"><svg width="18" height="20" viewBox="0 0 18 20" fill="#00d4ff"><polygon points="0,0 18,10 0,20"/></svg></div></div>`;
-      }
-    }).join('');
+    // แสดง thumbnail เฉพาะถ้ามีมากกว่า 1 อัน
+    const galEl = document.getElementById('d-gal');
+    if(thumbItems.length > 1) {
+      galEl.style.display = 'flex';
+      galEl.innerHTML = thumbItems.map((item,i)=>{
+        if(item.type==='img'){
+          return `<div class="d-thumb${i===0?' on':''}" onclick="switchDetailMedia({type:'img',src:'${item.src}'},this)"><div class="d-thumb-inner" style="background:#000;background-image:url('${item.src}');background-size:cover;background-position:center"></div></div>`;
+        } else {
+          return `<div class="d-thumb${imgs.length===0?' on':''}" onclick="switchDetailMedia({type:'video',src:'${item.src}'},this)"><div class="d-thumb-inner" style="background:#111127;display:flex;align-items:center;justify-content:center"><svg width="18" height="20" viewBox="0 0 18 20" fill="#00d4ff"><polygon points="0,0 18,10 0,20"/></svg></div></div>`;
+        }
+      }).join('');
+    } else {
+      galEl.style.display = 'none';
+      galEl.innerHTML = '';
+    }
   }
   // เก็บ video_url ไว้ใน detail
   window._detailVideoUrl = p.video_url || '';
