@@ -708,63 +708,55 @@ function clearHeroBg(){
 }
 
 async function saveHeroSettings(){
-  // ดึง stat จริงจาก Supabase
-  let stat1n = '0', stat2n = '0';
-  try {
-    const {data:products} = await sb.from('products').select('sold,is_active').eq('is_active',true);
-    if(products){
-      stat1n = products.length + '+';
-      const totalSold = products.reduce((s,p)=>s+(p.sold||0),0);
-      stat2n = totalSold >= 1000 ? (totalSold/1000).toFixed(1)+'K+' : totalSold+'+';
-    }
-    // ดึงลูกค้าจาก orders
-    const {data:orders} = await sb.from('orders').select('user_email').eq('status','approved');
-    if(orders){
-      const uniqueCustomers = new Set(orders.map(o=>o.user_email)).size;
-      stat4n = uniqueCustomers + '+';
-    }
-  } catch(e){}
-
-  const cfg={
-    siteName: document.getElementById('st-site-name').value||'RBX Market',
-    siteIcon: document.getElementById('st-site-icon').value||'🎮',
-    heroBadge: document.getElementById('st-hero-badge').value||'48 assets พร้อมขาย',
-    heroTitle1: document.getElementById('st-hero-title1').value||'Roblox Assets',
-    heroTitle2: document.getElementById('st-hero-title2').value||'คุณภาพจริง ราคาย่อมเยา',
-    heroSub: document.getElementById('st-hero-sub').value||'Script · 3D Model · Animation · VFX · UI · Icon ครบจบที่เดียว',
-    stat1n, stat1l: 'Assets',
-    stat2n, stat2l: 'ดาวน์โหลด',
-    stat4n: document.getElementById('st-stat4-n').value||'250+',
-    stat4l: document.getElementById('st-stat4-l').value||'ลูกค้า',
-    logoData: document.getElementById('st-site-icon').value||'🎮',
-    heroBgData: document.getElementById('st-hero-bg-data').value||'',
-  };
-  localStorage.setItem('rbx_hero_cfg', JSON.stringify(cfg));
-
-  // บันทึกลง Supabase site_settings
-  try {
-    const entries = Object.entries(cfg);
-    for(const [k,v] of entries){
-      await sb.from('site_settings').upsert(
-        {key:k, value:String(v), updated_at:new Date().toISOString()},
-        {onConflict:'key'}
-      );
-    }
-    showToast('บันทึกลง Supabase แล้ว ✅ หน้าร้านจะเปลี่ยนทันที');
-  } catch(e){
-    // ถ้า Supabase ไม่ได้ บันทึก localStorage ไว้ก่อน
-    console.log('Supabase err, using localStorage only:', e);
+  function toast(msg,ok=true){
+    const old=document.getElementById('rbx-t');if(old)old.remove();
+    const el=document.createElement('div');el.id='rbx-t';
+    el.style.cssText='position:fixed;top:24px;right:24px;padding:14px 22px;border-radius:12px;font-size:14px;font-weight:600;z-index:2147483647;box-shadow:0 8px 32px rgba(0,0,0,.9);pointer-events:none;'+(ok?'background:#0d2e1a;border:2px solid #27a85f;color:#4ade80;':'background:#2e0d0d;border:2px solid #ff4455;color:#ff8080;');
+    el.textContent=msg;document.body.appendChild(el);
+    setTimeout(()=>{if(el.parentNode)el.remove();},3500);
   }
-
-  // อัปเดต preview stat
-  document.getElementById('st-live-stat1').textContent = stat1n + ' Assets';
-  document.getElementById('st-live-stat2').textContent = stat2n + ' ดาวน์โหลด';
-  if(document.getElementById('st-live-stat4'))
-    document.getElementById('st-live-stat4').textContent = stat4n + ' ลูกค้า';
-
-  // toast จะแสดงใน try/catch ด้านบน ถ้า Supabase ใช้ได้
-  if(!sb) showToast('บันทึกแล้ว ✅ (Assets: '+stat1n+', DL: '+stat2n+')');
-  updatePreview();
+  toast('⏳ กำลังบันทึก...');
+  const SB='https://qjkpkgcgyqmcvluodzfy.supabase.co';
+  // ดึง key จาก script
+  let KEY='';
+  for(const s of document.querySelectorAll('script')){const m=s.textContent.match(/eyJ[A-Za-z0-9._-]{100,}/);if(m){KEY=m[0];break;}}
+  if(!KEY){toast('ไม่พบ API Key',false);return;}
+  const fields={
+    siteName:document.getElementById('st-site-name')?.value||'RBX Market',
+    heroBadge:document.getElementById('st-hero-badge')?.value||'',
+    heroTitle1:document.getElementById('st-hero-title1')?.value||'',
+    heroTitle2:document.getElementById('st-hero-title2')?.value||'',
+    heroSub:document.getElementById('st-hero-sub')?.value||'',
+    stat1l:'Assets',stat2l:'ดาวน์โหลด',stat4l:'ลูกค้า',
+    logoData:document.getElementById('st-site-icon')?.value||'',
+    heroBgData:document.getElementById('st-hero-bg-data')?.value||'',
+  };
+  try{
+    let ok=true;
+    for(const [key,value] of Object.entries(fields)){
+      const r=await fetch(SB+'/rest/v1/site_settings',{
+        method:'POST',
+        headers:{'apikey':KEY,'Authorization':'Bearer '+KEY,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates'},
+        body:JSON.stringify({key,value,updated_at:new Date().toISOString()})
+      });
+      if(!r.ok){ok=false;break;}
+    }
+    // อัปเดต live stat
+    try{
+      const {data:prods}=await sb.from('products').select('sold,is_active').eq('is_active',true);
+      if(prods){
+        const cnt=prods.length;
+        const sold=prods.reduce((s,p)=>s+(p.sold||0),0);
+        const s2=sold>=1000?(sold/1000).toFixed(1)+'K+':sold+'+';
+        if(document.getElementById('st-live-stat1'))document.getElementById('st-live-stat1').textContent=cnt+'+ Assets';
+        if(document.getElementById('st-live-stat2'))document.getElementById('st-live-stat2').textContent=s2+' ดาวน์โหลดรวม';
+      }
+      const {data:ords}=await sb.from('orders').select('user_email').eq('status','approved');
+      if(ords&&document.getElementById('st-live-stat4')){const uc=new Set(ords.map(o=>o.user_email)).size;document.getElementById('st-live-stat4').textContent=uc+'+ ลูกค้า';}
+    }catch(e){}
+    toast(ok?'✅ บันทึก Hero & Banner สำเร็จ!':'❌ เกิดข้อผิดพลาด',ok);
+    localStorage.setItem('rbx_hero_cfg',JSON.stringify(fields));
+  }catch(e){toast('❌ Error: '+e.message,false);}
 }
 
 function saveShopSettings(){
@@ -844,15 +836,12 @@ async function loadHeroSettings(){
 }
 
 function showToast(msg,type=''){
-  const old=document.getElementById('rbx-toast-msg');
-  if(old)old.remove();
-  const el=document.createElement('div');
-  el.id='rbx-toast-msg';
+  const old=document.getElementById('rbx-t');if(old)old.remove();
+  const el=document.createElement('div');el.id='rbx-t';
   const ok=type!=='err';
-  el.style.cssText='position:fixed;top:24px;right:24px;padding:14px 22px;border-radius:12px;font-size:14px;font-weight:500;z-index:2147483647;pointer-events:none;box-shadow:0 8px 32px rgba(0,0,0,.9);'+(ok?'background:#0d2e1a;border:1.5px solid #27a85f;color:#4ade80;':'background:#2e0d0d;border:1.5px solid #ff4455;color:#ff8080;');
-  el.textContent=msg;
-  document.body.appendChild(el);
-  setTimeout(()=>{if(el.parentNode)el.remove();},3000);
+  el.style.cssText='position:fixed;top:24px;right:24px;padding:14px 22px;border-radius:12px;font-size:14px;font-weight:600;z-index:2147483647;box-shadow:0 8px 32px rgba(0,0,0,.9);pointer-events:none;'+(ok?'background:#0d2e1a;border:2px solid #27a85f;color:#4ade80;':'background:#2e0d0d;border:2px solid #ff4455;color:#ff8080;');
+  el.textContent=msg;document.body.appendChild(el);
+  setTimeout(()=>{if(el.parentNode)el.remove();},3500);
 }
 
 
