@@ -744,7 +744,7 @@ async function loadMyAssets(){
   if(!content) return;
 
   if(!currentUser){
-    content.innerHTML = '<div style="text-align:center;padding:2rem;color:rgba(255,255,255,.4);font-size:13px">กรุณา <span style="color:#00d4ff;cursor:pointer" onclick="go('login')">เข้าสู่ระบบ</span> เพื่อดู Assets ของคุณครับ</div>';
+    content.innerHTML = '<div style="text-align:center;padding:2rem;color:rgba(255,255,255,.4);font-size:13px">กรุณา <span style="color:#00d4ff;cursor:pointer" onclick="go(&apos;login&apos;)">เข้าสู่ระบบ</span> เพื่อดู Assets ของคุณครับ</div>';
     return;
   }
 
