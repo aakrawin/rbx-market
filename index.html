@@ -573,23 +573,36 @@ function openDetail(id){
     // มีรูป/วิดีโอ - แสดงอันแรก
     switchDetailMedia(thumbItems[0]);
     document.getElementById('d-play-ov').style.display = hasVideo && thumbItems[0].type==='img' ? 'none' : '';
-    // แสดง thumbnail เฉพาะถ้ามีมากกว่า 1 อัน
+        // แสดง thumbnail — ใช้ appendChild เพื่อ preserve event listeners
     const galEl = document.getElementById('d-gal');
+    galEl.innerHTML = '';
     if(thumbItems.length > 1) {
-      galEl.style.display = thumbItems.length > 1 ? 'flex' : 'none'; galEl.style.flexWrap = 'wrap'; galEl.style.gap = '6px';
-      galEl.innerHTML = thumbItems.map((item,i)=>{
+      galEl.style.cssText = 'display:flex;flex-wrap:wrap;gap:6px;margin-top:8px';
+      thumbItems.forEach((item,i)=>{
+        const wrap = document.createElement('div');
+        wrap.className = 'd-thumb' + (i===0?' on':'');
+        wrap.style.cssText = 'flex:0 0 80px;height:60px;border-radius:7px;overflow:hidden;cursor:pointer;border:2px solid '+(i===0?'#00d4ff':'rgba(255,255,255,.15)')+';transition:border-color .15s';
         if(item.type==='img'){
-          const t1=document.createElement('div');t1.className='d-thumb'+(i===0?' on':'');t1.style.cssText='flex:0 0 72px;height:54px;border-radius:7px;overflow:hidden;cursor:pointer;border:1.5px solid '+(i===0?'var(--c1)':'rgba(255,255,255,.1)');t1.onclick=(function(s,el){return function(){switchDetailMedia({type:'img',src:s},el);};})(item.src,t1);const in1=document.createElement('div');in1.className='d-thumb-inner';in1.style.cssText='width:100%;height:100%;background:#000 center/cover no-repeat';in1.style.backgroundImage="url('"+item.src+"')";t1.appendChild(in1);return t1.outerHTML;
+          const bg = document.createElement('div');
+          bg.style.cssText = 'width:100%;height:100%;background:#000 center/cover no-repeat';
+          bg.style.backgroundImage = "url('"+item.src+"')";
+          wrap.appendChild(bg);
+          wrap.addEventListener('click', (function(s,el){ return function(){ switchDetailMedia({type:'img',src:s},el); }; })(item.src, wrap));
         } else {
-          const t2=document.createElement('div');t2.className='d-thumb'+(imgs.length===0?' on':'');t2.style.cssText='flex:0 0 72px;height:54px;border-radius:7px;overflow:hidden;cursor:pointer;border:1.5px solid '+(imgs.length===0?'var(--c1)':'rgba(255,255,255,.1)')+';background:#111127;display:flex;align-items:center;justify-content:center';const vidSrc2=item.src;t2.onclick=(function(s,el){return function(){switchDetailMedia({type:'video',src:s},el);};})(vidSrc2,t2);t2.innerHTML='<div style="display:flex;flex-direction:column;align-items:center;gap:3px"><svg width="14" height="16" viewBox="0 0 14 16" fill="#00d4ff"><polygon points="0,0 14,8 0,16"/></svg><span style="font-size:9px;color:#00d4ff">Video</span></div>';return t2.outerHTML;
+          wrap.style.background = '#0d1a2e';
+          wrap.style.display = 'flex';
+          wrap.style.alignItems = 'center';
+          wrap.style.justifyContent = 'center';
+          wrap.innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;gap:3px"><svg width="16" height="18" viewBox="0 0 16 18" fill="#00d4ff"><polygon points="0,0 16,9 0,18"/></svg><span style="font-size:9px;color:#00d4ff;font-weight:500">Video</span></div>';
+          const vs = item.src;
+          wrap.addEventListener('click', (function(s,el){ return function(){ switchDetailMedia({type:'video',src:s},el); }; })(vs, wrap));
         }
-      }).join('');
+        galEl.appendChild(wrap);
+      });
     } else {
-      galEl.style.display = thumbItems.length > 1 ? 'flex' : 'none'; galEl.style.flexWrap = 'wrap'; galEl.style.gap = '6px';
-      galEl.innerHTML = '';
+      galEl.style.display = 'none';
     }
-  }
-  // เก็บ video_url ไว้ใน detail
+    // เก็บ video_url ไว้ใน detail
   window._detailVideoUrl = videoSrc || '';
 
   // วิธีใช้
@@ -1067,6 +1080,8 @@ function patchAuthPages() {
       <div class="auth-sw">มีบัญชีแล้ว? <span class="auth-lnk" onclick="go('login')">เข้าสู่ระบบ</span></div>
     `;
   }
+}
+
 }
 
 patchAuthPages();
