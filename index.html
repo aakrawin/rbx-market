@@ -206,6 +206,7 @@ body{font-family:var(--font-sans)}
 .upd-badge{background:rgba(0,212,255,.12);border:0.5px solid rgba(0,212,255,.2);border-radius:50px;padding:1px 8px;font-size:9px;color:var(--c1)}
 .ma-btns{display:flex;gap:6px}
 .ma-dl{flex:1;padding:6px 0;background:#080812;color:var(--c1);border:0.5px solid var(--c1);border-radius:50px;font-size:11px;cursor:pointer;text-align:center}
+.ma-tut-btn{background:rgba(0,212,255,.1);border:0.5px solid rgba(0,212,255,.3);color:#00d4ff;border-radius:50px;padding:6px 14px;font-size:12px;cursor:pointer;display:flex;align-items:center;gap:5px}
 .ma-tut{flex:1;padding:6px 0;border:0.5px solid rgba(255,255,255,.1);color:rgba(255,255,255,.5);border-radius:50px;font-size:11px;cursor:pointer;text-align:center}
 .cc-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:1.25rem}
 .cc{background:#111127;border:0.5px solid var(--border);border-radius:12px;padding:1.1rem;text-align:center;cursor:pointer}
@@ -395,12 +396,20 @@ body{font-family:var(--font-sans)}
 <div id="page-myassets" class="page"><div class="page-inner" style="max-width:720px">
   <button class="back-btn" onclick="go('home')">← กลับ</button>
   <div class="slabel">My Assets</div>
-  <div class="ma-grid">
-    <div class="ma-card"><div class="ma-top"><div class="ma-ico">🖥️</div><div><div class="ma-name">Admin Command System Pro</div><div class="ma-date">ซื้อ 20 เม.ย. 2026</div></div></div><div class="ma-ver">v2.1.0 <span class="upd-badge">อัปเดตใหม่!</span></div><div class="ma-btns"><div class="ma-dl">ดาวน์โหลด</div><div class="ma-tut">คลิปสอน</div></div></div>
-    <div class="ma-card"><div class="ma-top"><div class="ma-ico">✨</div><div><div class="ma-name">Magic Spell Effects Pack</div><div class="ma-date">ซื้อ 18 เม.ย. 2026</div></div></div><div class="ma-ver">v1.3.0</div><div class="ma-btns"><div class="ma-dl">ดาวน์โหลด</div><div class="ma-tut">คลิปสอน</div></div></div>
-    <div class="ma-card"><div class="ma-top"><div class="ma-ico">🏰</div><div><div class="ma-name">Medieval Castle Pack</div><div class="ma-date">ซื้อ 10 เม.ย. 2026</div></div></div><div class="ma-ver">v1.1.0 <span class="upd-badge">อัปเดตใหม่!</span></div><div class="ma-btns"><div class="ma-dl">ดาวน์โหลด</div><div class="ma-tut">คลิปสอน</div></div></div>
+  <div id="ma-content">
+    <div style="text-align:center;padding:2rem;color:rgba(255,255,255,.35);font-size:13px" id="ma-loading">⏳ กำลังโหลด...</div>
   </div>
 </div></div>
+
+<!-- Modal คลิปสอน -->
+<div id="tutorial-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:9999;align-items:center;justify-content:center">
+  <div style="background:#111127;border:0.5px solid rgba(255,255,255,.1);border-radius:16px;padding:1.25rem;width:90%;max-width:700px;position:relative">
+    <button onclick="closeTutorial()" style="position:absolute;top:12px;right:12px;background:rgba(255,255,255,.1);border:none;color:#fff;width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:16px">×</button>
+    <div class="slabel" style="margin-bottom:.75rem" id="tut-title">คลิปสอน</div>
+    <div id="tut-body" style="border-radius:10px;overflow:hidden;background:#000;aspect-ratio:16/9;display:flex;align-items:center;justify-content:center"></div>
+    <div id="tut-extra" style="margin-top:.75rem;font-size:12px;color:rgba(255,255,255,.4)"></div>
+  </div>
+</div>
 
 <div id="page-contact" class="page"><div class="page-inner" style="max-width:520px">
   <button class="back-btn" onclick="go('home')">← กลับ</button>
@@ -718,6 +727,126 @@ async function loadSiteSettings() {
       }
     }
   } catch(e){ console.log('loadSiteSettings err', e); }
+}
+
+// ---- MY ASSETS ----
+async function loadMyAssets(){
+  const content = document.getElementById('ma-content');
+  if(!content) return;
+
+  if(!currentUser){
+    content.innerHTML = '<div style="text-align:center;padding:2rem;color:rgba(255,255,255,.4);font-size:13px">กรุณา <span style="color:#00d4ff;cursor:pointer" onclick="go('login')">เข้าสู่ระบบ</span> เพื่อดู Assets ของคุณครับ</div>';
+    return;
+  }
+
+  content.innerHTML = '<div style="text-align:center;padding:2rem;color:rgba(255,255,255,.35);font-size:13px">⏳ กำลังโหลด...</div>';
+
+  try {
+    // ดึงออเดอร์ที่ approved ของลูกค้า
+    const {data:orders, error} = await sb.from('orders')
+      .select('*')
+      .eq('user_email', currentUser.email)
+      .eq('status', 'approved');
+
+    if(error || !orders || orders.length===0){
+      content.innerHTML = '<div style="text-align:center;padding:2rem;color:rgba(255,255,255,.35);font-size:13px">ยังไม่มี Assets ครับ<br><span style="color:rgba(255,255,255,.2)">สินค้าจะปรากฏหลังจาก Admin อนุมัติออเดอร์แล้ว</span></div>';
+      return;
+    }
+
+    // รวม product IDs ทั้งหมด
+    const allProductIds = [...new Set(orders.flatMap(o => o.product_ids||[]))];
+    if(!allProductIds.length){
+      content.innerHTML = '<div style="text-align:center;padding:2rem;color:rgba(255,255,255,.35)">ยังไม่มีสินค้าครับ</div>';
+      return;
+    }
+
+    // ดึงข้อมูลสินค้า
+    const {data:products} = await sb.from('products').select('*').in('id', allProductIds);
+    if(!products || !products.length){
+      content.innerHTML = '<div style="text-align:center;padding:2rem;color:rgba(255,255,255,.35)">ไม่พบข้อมูลสินค้าครับ</div>';
+      return;
+    }
+
+    const icons = {script:"🖥️","3dmodel":"🏰",animation:"🎭",vfx:"✨",ui:"🎮",icon:"🔷",free:"🎁"};
+
+    content.innerHTML = '<div class="ma-grid">' + products.map(p => `
+      <div class="ma-card">
+        <div class="ma-top">
+          <div class="ma-ico">${icons[p.category]||"📦"}</div>
+          <div>
+            <div class="ma-name">${p.name_en}</div>
+            <div class="ma-date">${p.name_th||""}</div>
+          </div>
+        </div>
+        <div class="ma-ver">${p.version||"v1.0.0"}</div>
+        <div class="ma-btns">
+          ${p.asset_url ? `<div class="ma-dl" onclick="downloadAsset('${p.id}','${p.asset_name||p.name_en}')">⬇️ ดาวน์โหลด</div>` : '<div class="ma-dl" style="opacity:.4;cursor:default">ไม่มีไฟล์</div>'}
+          ${(p.tutorial_url||p.asset_url) ? `<div class="ma-tut" onclick="openTutorial('${encodeURIComponent(p.name_en)}','${encodeURIComponent(p.tutorial_url||"")}','${encodeURIComponent(p.asset_url&&p.asset_url.startsWith("data:")?p.asset_name||"":"")}')">🎓 คลิปสอน</div>` : '<div class="ma-tut" style="opacity:.4;cursor:default">ไม่มีคลิป</div>'}
+        </div>
+      </div>
+    `).join('') + '</div>';
+
+  } catch(e){
+    content.innerHTML = '<div style="text-align:center;padding:2rem;color:#ff4455;font-size:12px">เกิดข้อผิดพลาด: '+e.message+'</div>';
+  }
+}
+
+function openTutorial(nameEnc, urlEnc, assetNameEnc){
+  const name = decodeURIComponent(nameEnc);
+  const url = decodeURIComponent(urlEnc);
+  const modal = document.getElementById('tutorial-modal');
+  const title = document.getElementById('tut-title');
+  const body = document.getElementById('tut-body');
+  const extra = document.getElementById('tut-extra');
+
+  title.textContent = 'คลิปสอน — ' + name;
+  body.innerHTML = '';
+  extra.innerHTML = '';
+
+  if(url.includes('youtube.com') || url.includes('youtu.be')){
+    // YouTube embed
+    let vid = url.match(/[?&]v=([^&]+)/)?.[1] || url.split('/').pop();
+    const iframe = document.createElement('iframe');
+    iframe.src = 'https://www.youtube.com/embed/' + vid;
+    iframe.style.cssText = 'width:100%;height:100%;border:none';
+    iframe.allowFullscreen = true;
+    body.appendChild(iframe);
+  } else if(url.startsWith('file:') || url==='' ){
+    body.innerHTML = '<div style="color:rgba(255,255,255,.4);font-size:13px;text-align:center;padding:2rem">ยังไม่มีคลิปสอนสำหรับสินค้านี้ครับ<br>ติดต่อเราทาง Facebook ได้เลย</div>';
+  } else if(url.startsWith('data:video')){
+    const vid = document.createElement('video');
+    vid.src = url;
+    vid.controls = true;
+    vid.style.cssText = 'width:100%;height:100%';
+    body.appendChild(vid);
+  } else {
+    body.innerHTML = '<div style="color:rgba(255,255,255,.4);font-size:13px;text-align:center;padding:2rem">ลิงก์คลิปสอน:<br><a href="'+url+'" target="_blank" style="color:#00d4ff">'+url+'</a></div>';
+  }
+
+  modal.style.display = 'flex';
+}
+
+function closeTutorial(){
+  document.getElementById('tutorial-modal').style.display = 'none';
+  const body = document.getElementById('tut-body');
+  if(body) body.innerHTML = ''; // หยุดวิดีโอ
+}
+
+async function downloadAsset(productId, assetName){
+  // ดึง asset_url จาก Supabase แล้วดาวน์โหลด
+  const {data:p} = await sb.from('products').select('asset_url,asset_name').eq('id',productId).single();
+  if(!p || !p.asset_url){
+    alert('ไม่พบไฟล์ Assets ครับ ติดต่อ Admin ได้เลย');
+    return;
+  }
+  if(p.asset_url.startsWith('data:')){
+    const a = document.createElement('a');
+    a.href = p.asset_url;
+    a.download = p.asset_name || assetName || 'asset.rbxm';
+    a.click();
+  } else {
+    window.open(p.asset_url, '_blank');
+  }
 }
 
 // ---- CHECK SESSION ----
