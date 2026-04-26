@@ -33,7 +33,10 @@ body{font-family:var(--font-sans)}
 .cbadge.pop{animation:bp .35s cubic-bezier(.34,1.56,.64,1)}
 @keyframes bp{0%{transform:scale(1)}50%{transform:scale(1.5)}100%{transform:scale(1)}}
 
-.page{display:none}.page.active{display:block}
+.page{display:none;position:fixed;inset:54px 0 0 0;overflow-y:auto;background:#080812;z-index:10}
+.page.active{display:block}
+#page-home{position:static;display:block}
+#page-home.page:not(.active){display:none;position:fixed}
 .slabel{font-size:10px;font-weight:500;color:rgba(255,255,255,.35);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:.75rem}
 
 .hero{background:#080812;padding:2.25rem 1.25rem 0;text-align:center;position:relative;overflow:hidden}
@@ -576,9 +579,9 @@ function openDetail(id){
       galEl.style.display = thumbItems.length > 1 ? 'flex' : 'none'; galEl.style.flexWrap = 'wrap'; galEl.style.gap = '6px';
       galEl.innerHTML = thumbItems.map((item,i)=>{
         if(item.type==='img'){
-          return `<div class="d-thumb${i===0?' on':''}" onclick="switchDetailMedia({type:'img',src:'${item.src}'},this)"><div class="d-thumb-inner" style="background:#000;background-image:url('${item.src}');background-size:cover;background-position:center"></div></div>`;
+          const t1=document.createElement('div');t1.className='d-thumb'+(i===0?' on':'');t1.style.cssText='flex:0 0 72px;height:54px;border-radius:7px;overflow:hidden;cursor:pointer;border:1.5px solid '+(i===0?'var(--c1)':'rgba(255,255,255,.1)');t1.onclick=(function(s,el){return function(){switchDetailMedia({type:'img',src:s},el);};})(item.src,t1);const in1=document.createElement('div');in1.className='d-thumb-inner';in1.style.cssText='width:100%;height:100%;background:#000 center/cover no-repeat';in1.style.backgroundImage="url('"+item.src+"')";t1.appendChild(in1);return t1.outerHTML;
         } else {
-          return `<div class="d-thumb${imgs.length===0?' on':''}" onclick="switchDetailMedia({type:'video',src:'${item.src}'},this)"><div class="d-thumb-inner" style="background:#111127;display:flex;align-items:center;justify-content:center"><svg width="18" height="20" viewBox="0 0 18 20" fill="#00d4ff"><polygon points="0,0 18,10 0,20"/></svg></div></div>`;
+          const t2=document.createElement('div');t2.className='d-thumb'+(imgs.length===0?' on':'');t2.style.cssText='flex:0 0 72px;height:54px;border-radius:7px;overflow:hidden;cursor:pointer;border:1.5px solid '+(imgs.length===0?'var(--c1)':'rgba(255,255,255,.1)')+';background:#111127;display:flex;align-items:center;justify-content:center';const vidSrc2=item.src;t2.onclick=(function(s,el){return function(){switchDetailMedia({type:'video',src:s},el);};})(vidSrc2,t2);t2.innerHTML='<div style="display:flex;flex-direction:column;align-items:center;gap:3px"><svg width="14" height="16" viewBox="0 0 14 16" fill="#00d4ff"><polygon points="0,0 14,8 0,16"/></svg><span style="font-size:9px;color:#00d4ff">Video</span></div>';return t2.outerHTML;
         }
       }).join('');
     } else {
@@ -619,10 +622,13 @@ function openDetail(id){
   go('detail');
 }
 function switchDetailMedia(item, thumbEl) {
-  // เปลี่ยน thumbnail active
   if(thumbEl) {
-    document.querySelectorAll('.d-thumb').forEach(t=>t.classList.remove('on'));
+    document.querySelectorAll('.d-thumb').forEach(t=>{
+      t.classList.remove('on');
+      t.style.borderColor='rgba(255,255,255,.1)';
+    });
     thumbEl.classList.add('on');
+    thumbEl.style.borderColor='var(--c1)';
   }
   const photo = document.getElementById('d-main-photo');
   const video = document.getElementById('d-main-video');
@@ -630,27 +636,27 @@ function switchDetailMedia(item, thumbEl) {
   const bg = document.getElementById('d-main-bg');
   const playOv = document.getElementById('d-play-ov');
 
-  // ซ่อนทั้งหมดก่อน
   [photo, video, yt, bg].forEach(el => el.style.display='none');
-  // หยุด video/yt
-  video.pause(); yt.src='';
+  try { video.pause(); } catch(e){}
+  yt.src='';
 
   if(item.type === 'img') {
     photo.src = item.src;
-    photo.style.display = 'block';
-    playOv.style.display = window._detailVideoUrl ? 'flex' : 'none';
-    // hover แสดง play ถ้ามี video
-    if(!window._detailVideoUrl) playOv.style.opacity = '0';
+    photo.style.cssText = 'display:block;width:100%;height:100%;object-fit:cover;border-radius:10px';
+    playOv.style.display = window._detailVideoUrl ? '' : 'none';
   } else if(item.type === 'video') {
-    const isYT = item.src.includes('youtube') || item.src.includes('youtu.be');
+    const src = item.src || '';
+    const isYT = src.includes('youtube') || src.includes('youtu.be');
+    const isData = src.startsWith('data:video');
+    const isMP4 = src.includes('.mp4');
     if(isYT) {
-      let vid = item.src.match(/[?&]v=([^&]+)/)?.[1] || item.src.split('/').pop().split('?')[0];
+      const vid = src.match(/[?&]v=([^&]+)/)?.[1] || src.split('/').pop().split('?')[0];
       yt.src = 'https://www.youtube.com/embed/' + vid + '?autoplay=1';
-      yt.style.display = 'block';
+      yt.style.cssText = 'display:block;width:100%;height:100%;border:none;border-radius:10px';
       playOv.style.display = 'none';
-    } else if(item.src.startsWith('data:video') || item.src.endsWith('.mp4')) {
-      video.src = item.src;
-      video.style.display = 'block';
+    } else if(isData || isMP4) {
+      video.src = src;
+      video.style.cssText = 'display:block;width:100%;height:100%;object-fit:contain;border-radius:10px;background:#000';
       video.play().catch(()=>{});
       playOv.style.display = 'none';
     }

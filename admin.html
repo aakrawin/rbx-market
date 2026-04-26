@@ -213,7 +213,7 @@ body{background:#0a0a16;color:#fff;min-height:100vh}
               </div>
               <div class="fg">
                 <div class="fl" style="margin-bottom:6px">วิดีโอ Preview (MP4)</div>
-                <div id="p-vid-preview" style="width:100%;aspect-ratio:16/9;background:#0a0a16;border-radius:8px;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.3);font-size:12px;overflow:hidden;margin-bottom:6px">ยังไม่มีวิดีโอ</div>
+                <div id="p-vid-preview" style="width:100%;aspect-ratio:16/9;background:#0a0a16;border-radius:8px;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.3);font-size:12px;overflow:hidden;margin-bottom:6px;max-height:200px">ยังไม่มีวิดีโอ</div>
                 <input type="file" id="p-vid-file" accept="video/mp4,video/*" onchange="previewProductVid(this)" style="display:none">
                 <button class="btn-sm btn-edit" onclick="document.getElementById('p-vid-file').click()" style="width:100%;text-align:center;margin-bottom:4px">🎬 เลือกวิดีโอ</button>
                 <input type="hidden" id="p-vid-data" value="">
@@ -623,16 +623,32 @@ function previewProductVid(input){
   if(!file)return;
   if(file.size>50*1024*1024){showToast('วิดีโอควรไม่เกิน 50MB','err');return;}
   const url=URL.createObjectURL(file);
-  document.getElementById('p-vid-data').value='pending:'+file.name;
   const prev=document.getElementById('p-vid-preview');
-  if(prev){prev.innerHTML='';const vid=document.createElement('video');vid.src=url;vid.style.cssText='width:100%;height:100%;object-fit:cover';vid.controls=true;prev.appendChild(vid);}
-  showToast('วิดีโอพร้อมแล้ว ✅');
+  if(prev){prev.innerHTML='';const vid=document.createElement('video');vid.src=url;vid.style.cssText='width:100%;height:100%;object-fit:contain';vid.controls=true;prev.appendChild(vid);}
+  // อ่านเป็น base64 ถ้าไฟล์ไม่เกิน 10MB
+  if(file.size<=10*1024*1024){
+    const r=new FileReader();
+    r.onload=e=>{document.getElementById('p-vid-data').value=e.target.result;showToast('วิดีโอพร้อมแล้ว ✅ ('+Math.round(file.size/1024)+'KB)');};
+    r.readAsDataURL(file);
+  } else {
+    document.getElementById('p-vid-data').value='pending:'+file.name;
+    showToast('วิดีโอใหญ่เกิน 10MB — แนะนำใช้ YouTube URL แทนครับ','err');
+  }
 }
 
 async function saveProduct(){
   const id=document.getElementById('edit-id').value;
-  const imgData=document.getElementById('p-img-data')?.value||'';
-  const vidUrl=document.getElementById('p-vid-url')?.value||'';
+  // รูปทั้งหมด - ดึงจาก p-img-list (JSON array)
+  let imagesArr = [];
+  try { imagesArr = JSON.parse(document.getElementById('p-img-list')?.value||'[]'); } catch(e){ imagesArr=[]; }
+  const imgData = document.getElementById('p-img-data')?.value||'';
+  if(imgData && !imagesArr.includes(imgData)) imagesArr.unshift(imgData);
+  
+  // วิดีโอ - YouTube URL หรือ data URL จากไฟล์
+  const vidYT = document.getElementById('p-vid-url')?.value||'';
+  const vidFile = document.getElementById('p-vid-data')?.value||'';
+  const videoUrl = vidYT || (vidFile && !vidFile.startsWith('pending:') ? vidFile : '') || '';
+
   const data={
     name_en:document.getElementById('p-name-en').value,
     name_th:document.getElementById('p-name-th').value,
@@ -646,8 +662,9 @@ async function saveProduct(){
     asset_url:document.getElementById('p-asset-data')?.value||'',
     asset_name:document.getElementById('p-asset-name')?.value||'',
     faq:document.getElementById('p-faq').value,
-    image_url:imgData||'',
-    video_url:vidUrl||'',
+    image_url:imagesArr[0]||'',
+    images:imagesArr,
+    video_url:videoUrl,
     is_active:true,
   };
   if(!data.name_en){showToast('กรุณาใส่ชื่อสินค้า','err');return;}
