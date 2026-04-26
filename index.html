@@ -335,17 +335,16 @@ body{font-family:var(--font-sans)}
       <div class="dtab on" onclick="tab(this,'info')">รายละเอียด</div>
       <div class="dtab" onclick="tab(this,'howto')">วิธีใช้</div>
       
-      <div class="dtab" onclick="tab(this,'faq')">FAQ</div>
+      
     </div>
     <div class="dc on" id="tab-info"><div class="dc-text" id="d-info-text"></div></div>
-    <div class="dc" id="tab-howto"><div class="dc-text">1. ดาวน์โหลดไฟล์ .rbxm หลังชำระเงิน<br>2. เปิด Roblox Studio → Explorer<br>3. Import เข้า ServerScriptService<br>4. ปรับ config ตาม README<br>5. Playtest ได้เลยครับ<br><br>มีคลิปสอนใน My Assets ครับ</div></div>
+    <div class="dc" id="tab-howto"></div>
     
       </div>
-    <div class="dc" id="tab-faq">
-      <div class="faq-item"><div class="faq-q">ใช้ได้กี่เกม?</div><div class="faq-a">ใช้ได้ไม่จำกัด ซื้อแล้วเป็นของคุณตลอดไปครับ</div></div>
-      <div class="faq-item"><div class="faq-q">มีอัปเดตฟรีไหม?</div><div class="faq-a">ทุก version ดาวน์โหลดฟรีใน My Assets ครับ</div></div>
-      <div class="faq-item"><div class="faq-q">แก้โค้ดเองได้ไหม?</div><div class="faq-a">ได้เลย ไม่มีล็อคหรือ obfuscate ใดๆ</div></div>
-      <div class="faq-item"><div class="faq-q">ไม่ได้รับสินค้าทำอย่างไร?</div><div class="faq-a">ติดต่อ Facebook จัดการภายใน 24 ชม.</div></div>
+    
+      
+      
+      
     </div>
   </div>
 </div>
@@ -541,7 +540,9 @@ function openDetail(id){
   document.getElementById('d-price').className=p.price===0?'d-price d-price-free':'d-price';
 
   // รายละเอียด
-  document.getElementById('d-info-text').textContent=p.info||'';
+  // รายละเอียด - render markdown
+  const infoEl = document.getElementById('d-info-text');
+  if(infoEl){ infoEl.innerHTML = parseMarkdown(p.info||''); infoEl.style.cssText='font-size:13px;color:rgba(255,255,255,.6);line-height:1.8'; }
   document.getElementById('d-mcat').textContent=p.cat==='3dmodel'?'3D Model':p.cat;
   document.getElementById('d-msold').textContent=(p.sold||0).toLocaleString()+' ชิ้น';
   const verEl=document.getElementById('d-mver');if(verEl)verEl.textContent=p.version||'v1.0.0';
@@ -573,7 +574,7 @@ function openDetail(id){
     // แสดง thumbnail เฉพาะถ้ามีมากกว่า 1 อัน
     const galEl = document.getElementById('d-gal');
     if(thumbItems.length > 1) {
-      galEl.style.display = 'flex';
+      galEl.style.display = thumbItems.length > 1 ? 'flex' : 'none';
       galEl.innerHTML = thumbItems.map((item,i)=>{
         if(item.type==='img'){
           return `<div class="d-thumb${i===0?' on':''}" onclick="switchDetailMedia({type:'img',src:'${item.src}'},this)"><div class="d-thumb-inner" style="background:#000;background-image:url('${item.src}');background-size:cover;background-position:center"></div></div>`;
@@ -582,7 +583,7 @@ function openDetail(id){
         }
       }).join('');
     } else {
-      galEl.style.display = 'none';
+      galEl.style.display = thumbItems.length > 1 ? 'flex' : 'none';
       galEl.innerHTML = '';
     }
   }
@@ -594,7 +595,7 @@ function openDetail(id){
   if(howtoEl){
     const txt=p.howto||'';
     howtoEl.innerHTML=txt
-      ? '<div class="dc-text">'+txt.split('\n').join('<br>')+'</div>'
+      ? '<div style="padding:4px 0">'+parseMarkdown(txt)+'</div>'
       : '<div class="dc-text" style="color:rgba(255,255,255,.4)">ยังไม่มีวิธีใช้ครับ</div>';
   }
 
@@ -605,10 +606,10 @@ function openDetail(id){
     let faqHtml='';
     let q='',a='';
     lines.forEach(l=>{
-      if(l.startsWith('Q:')){ if(q)faqHtml+=`<div class="faq-item"><div class="faq-q">${q}</div><div class="faq-a">${a}</div></div>`; q=l.replace('Q:','').trim();a=''; }
+      if(l.startsWith('Q:')){ if(q)faqHtml+=``; q=l.replace('Q:','').trim();a=''; }
       else if(l.startsWith('A:')){ a=l.replace('A:','').trim(); }
     });
-    if(q)faqHtml+=`<div class="faq-item"><div class="faq-q">${q}</div><div class="faq-a">${a}</div></div>`;
+    if(q)faqHtml+=``;
     faqEl.innerHTML=faqHtml||'<div class="dc-text" style="color:rgba(255,255,255,.4)">ยังไม่มี FAQ ครับ</div>';
   }
 
@@ -668,6 +669,37 @@ function playDetailVideo() {
       switchDetailMedia({type:'video', src: window._detailVideoUrl}, t);
     }
   });
+}
+
+function parseMarkdown(text){
+  if(!text) return '';
+  return text
+    .split('\n')
+    .map(line => {
+      // heading
+      if(line.startsWith('# ')) return '<h3 style="font-size:15px;font-weight:600;color:#fff;margin:12px 0 6px">'+line.slice(2)+'</h3>';
+      if(line.startsWith('## ')) return '<h4 style="font-size:13px;font-weight:600;color:#fff;margin:10px 0 5px">'+line.slice(3)+'</h4>';
+      // bullet
+      if(line.match(/^[\-\*] /)) {
+        let t = line.slice(2);
+        // indent bullet
+        t = t.replace(/\*\*(.+?)\*\*/g,'<strong style="color:#fff">$1</strong>');
+        t = t.replace(/`(.+?)`/g,'<code style="background:rgba(0,212,255,.1);color:#00d4ff;padding:1px 5px;border-radius:4px;font-size:11px">$1</code>');
+        return '<div style="display:flex;gap:7px;padding:3px 0"><span style="color:var(--c1);margin-top:1px;flex-shrink:0">•</span><span>'+t+'</span></div>';
+      }
+      if(line.match(/^    [\-\*] /)) {
+        let t = line.slice(6);
+        t = t.replace(/\*\*(.+?)\*\*/g,'<strong style="color:#fff">$1</strong>');
+        return '<div style="display:flex;gap:7px;padding:2px 0;padding-left:16px"><span style="color:rgba(255,255,255,.35);flex-shrink:0">–</span><span style="color:rgba(255,255,255,.5)">'+t+'</span></div>';
+      }
+      // bold, code inline
+      let t = line
+        .replace(/\*\*(.+?)\*\*/g,'<strong style="color:#fff">$1</strong>')
+        .replace(/`(.+?)`/g,'<code style="background:rgba(0,212,255,.1);color:#00d4ff;padding:1px 5px;border-radius:4px;font-size:11px">$1</code>');
+      if(t.trim()==='') return '<div style="height:8px"></div>';
+      return '<div style="padding:2px 0">'+t+'</div>';
+    })
+    .join('');
 }
 
 function tab(el,t){document.querySelectorAll('.dtab').forEach(d=>d.classList.remove('on'));document.querySelectorAll('.dc').forEach(d=>d.classList.remove('on'));el.classList.add('on');document.getElementById('tab-'+t).classList.add('on');}
